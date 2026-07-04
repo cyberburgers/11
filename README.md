@@ -23,16 +23,27 @@ Sen tarifi kurarsın, bot uygular. Butonları koordinatla değil,
 
 | Adım | Ne yapar |
 |------|----------|
-| 📷 Butona tıkla | Butonu ekranda görüntüsünden bulur, tıklar (sol/çift/sağ) |
+| 📷 Butona tıkla | Butonu görüntüsünden bulur, tıklar — istersen **tüm eşleşmelere** |
 | 🎯 Konuma tıkla | Sabit (x, y) noktasına tıklar — fareyi götür, konumu kendisi alır |
-| 👁 Buton bekle | Bir görüntü **görünene** ya da **kaybolana** kadar bekler (örn. "yükleniyor" yazısı kaybolsun) |
-| ⏱ Bekle | Sabit süre bekler |
-| 🎲 Rastgele bekle | İki değer arasında rastgele süre bekler |
+| 👁 Buton bekle | Bir görüntü **görünene** ya da **kaybolana** kadar bekler |
+| 🎨 Renk bekle | Bir noktanın rengi **gelene/gidene** kadar bekler (örn. gösterge yeşile dönsün) |
+| ⏱ / 🎲 Bekle | Sabit ya da rastgele süre bekler |
 | ⌨ Yazı yaz | Metin yazar (Türkçe karakter destekli) |
-| ↵ Tuşa bas | Enter, Tab, F5... (istenirse N kez) |
-| ⌃ Kısayol | ctrl+c, alt+tab, ctrl+shift+s gibi kombinasyonlar |
+| 📋 Panoya kopyala | Metni panoya alır, istersen Ctrl+V ile yapıştırır |
+| ↵ / ⌃ Tuş & kısayol | Enter, Tab... veya ctrl+c, alt+tab kombinasyonları |
 | 🖱 Tekerlek kaydır | Sayfayı aşağı/yukarı kaydırır |
-| 🔔 Bip sesi | Ses çalar (örn. iş bitince haber versin) |
+| 🔀 Koşullu atlama | Görüntü **görünüyorsa/görünmüyorsa** başka adıma atlar (örn. hata penceresi çıkarsa kapat) |
+| 🔁 Döngü | Belirtilen adıma geri döner, N kez — tarif içinde tekrar bloğu |
+| 🪟 Pencere öne getir | Başlığında verilen metin geçen pencereyi öne getirir |
+| 🚀 Program/site aç | .exe, program adı veya web adresi açar |
+| 📸 Ekran görüntüsü | Ekranı `ekranlar/` klasörüne kaydeder |
+| 🔔 Bip sesi | Ses çalar (örn. bir noktada haber versin) |
+
+## ⏰ Zamanlama
+
+**⏰ Zamanla** butonuyla tarifi otomatik başlatabilirsin:
+- **Belirli saatte** (her gün, örn. 09:30) — program açık kaldığı sürece
+- **Her N dakikada bir** (ilk çalıştırma hemen yapılır)
 
 ## Buton adımının ayarları
 
@@ -52,11 +63,15 @@ Sen tarifi kurarsın, bot uygular. Butonları koordinatla değil,
 
 ## ⚙ Ayarlar
 
-- Genel tanıma hassasiyeti
-- Fare hareket hızı (0 = ışınlan)
-- Adımlar arası / turlar arası bekleme
-- Başlarken geri sayım süresi
+- Genel tanıma hassasiyeti, fare hızı (0 = ışınlan)
+- Adımlar arası / turlar arası bekleme, geri sayım süresi
+- **Akıllı arama:** buton bulunamazsa farklı boyutlarda da aranır —
+  zoom/çözünürlük değişse bile bulur
+- **Hızlı arama:** gri tonlamalı arama, büyük ekranlarda hızlandırır
 - **İnsansı mod:** tıklamalara küçük rastgele sapma ve gecikmeler ekler
+- **Hata anında ekran görüntüsü:** bot bir şey bulamayıp durursa o anki ekran
+  `hatalar/` klasörüne kaydedilir — ne olduğunu görürsün
+- **Bitiş sesi:** iş tamamlanınca bip çalar
 - **Kısayol tuşları:** Başlat (varsayılan **F8**) ve Durdur (varsayılan **ESC**)
   — pencere simge durumundayken bile çalışır
 

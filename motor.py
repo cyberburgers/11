@@ -2,20 +2,27 @@
 """
 Tarif motoru (PRO) — adımları sırasıyla uygular.
 
-Butonları koordinatla değil EKRAN GÖRÜNTÜSÜYLE tanır: butonun küçük resmi
-ekranda aranır, bulunduğu yere tıklanır. Buton yer değiştirse de çalışır.
+Butonları koordinatla değil EKRAN GÖRÜNTÜSÜYLE tanır. Akıllı arama açıkken
+buton farklı boyutlarda da aranır (çözünürlük/zoom değişse bile bulunur).
 
 Adım tipleri:
-    butona_tikla   : resmi ekranda bul ve tıkla (sol/çift/sağ, kaydırma, hassasiyet)
-    buton_bekle    : resim görünene ya da kaybolana kadar bekle
-    tikla_koordinat: sabit (x, y) noktasına tıkla
-    bekle          : sabit süre bekle
-    rastgele_bekle : iki değer arasında rastgele süre bekle
-    yazi           : metin yaz (Türkçe destekli)
-    tus            : tek tuşa bas (istenirse N kez)
-    kisayol        : tuş kombinasyonu (ctrl+c gibi)
-    kaydir         : fare tekerleğini kaydır
-    ses            : bip sesi çal
+    butona_tikla    : resmi ekranda bul ve tıkla (tek ya da TÜM eşleşmeler)
+    buton_bekle     : resim görünene ya da kaybolana kadar bekle
+    gorunca_git     : resim görünüyorsa (veya görünmüyorsa) başka adıma atla
+    don             : belirtilen adıma geri dön (en fazla N kez) → döngü
+    tikla_koordinat : sabit (x, y) noktasına tıkla
+    bekle           : sabit süre bekle
+    rastgele_bekle  : iki değer arasında rastgele süre bekle
+    yazi            : metin yaz (Türkçe destekli)
+    tus             : tek tuşa bas (istenirse N kez)
+    kisayol         : tuş kombinasyonu (ctrl+c gibi)
+    kaydir          : fare tekerleğini kaydır
+    pencere_getir   : başlığında verilen metin geçen pencereyi öne getir
+    ac              : program ya da web sitesi aç
+    pano            : metni panoya kopyala (istenirse yapıştır)
+    ekran_goruntusu : ekran görüntüsünü dosyaya kaydet
+    renk_bekle      : bir noktanın rengi olana/gidene kadar bekle
+    ses             : bip sesi çal
 """
 
 import json
@@ -23,6 +30,7 @@ import os
 import random
 import threading
 import time
+from collections import namedtuple
 
 import pyautogui
 
@@ -31,24 +39,42 @@ try:
 except ImportError:
     pynput_klavye = None
 
+try:
+    import pyperclip
+except ImportError:
+    pyperclip = None
+
+try:
+    import pygetwindow
+except ImportError:
+    pygetwindow = None
+
 # Acil durdurma: fareyi ekranın SOL ÜST köşesine fırlatırsan bot anında durur
 pyautogui.FAILSAFE = True
 pyautogui.PAUSE = 0.02
 
 TARIF_KLASORU = "tarifler"
 BUTON_KLASORU = "butonlar"
+EKRAN_KLASORU = "ekranlar"
+HATA_KLASORU = "hatalar"
 AYAR_DOSYASI = "ayarlar.json"
 
 VARSAYILAN_AYARLAR = {
-    "guven": 0.85,        # görüntü tanıma hassasiyeti (0.5 - 0.99)
-    "fare_hizi": 0.2,     # fare hedefe kaç saniyede gitsin (0 = ışınlan)
-    "adim_arasi": 0.05,   # her adım arasına eklenen bekleme (sn)
-    "tur_arasi": 0.0,     # tekrarlar (turlar) arası bekleme (sn)
-    "geri_sayim": 3,      # BAŞLAT'a basınca kaç sn geri sayım
-    "insansi": False,     # insansı mod: küçük rastgele sapma ve gecikmeler
-    "baslat_tusu": "f8",  # global başlat kısayolu
-    "durdur_tusu": "esc", # global durdur kısayolu
+    "guven": 0.85,          # görüntü tanıma hassasiyeti (0.5 - 0.99)
+    "fare_hizi": 0.2,       # fare hedefe kaç saniyede gitsin (0 = ışınlan)
+    "adim_arasi": 0.05,     # her adım arasına eklenen bekleme (sn)
+    "tur_arasi": 0.0,       # tekrarlar (turlar) arası bekleme (sn)
+    "geri_sayim": 3,        # BAŞLAT'a basınca kaç sn geri sayım
+    "insansi": False,       # insansı mod: küçük rastgele sapma ve gecikmeler
+    "baslat_tusu": "f8",    # global başlat kısayolu
+    "durdur_tusu": "esc",   # global durdur kısayolu
+    "akilli_arama": True,   # bulamazsa farklı boyutlarda da ara (zoom/çözünürlük)
+    "gri_ton": False,       # gri tonlamalı hızlı arama
+    "hata_goruntusu": True, # hata olunca ekran görüntüsünü hatalar/ içine kaydet
+    "bitis_sesi": True,     # iş bitince bip sesi çal
 }
+
+Nokta = namedtuple("Nokta", "x y")
 
 
 # ---------------------------------------------------------------- ayarlar
@@ -84,23 +110,76 @@ class AdimHatasi(Exception):
     """Bir adım uygulanamadığında fırlatılır (örn. buton bulunamadı)."""
 
 
-def butonu_bul(resim_yolu, guven=0.85):
+def _coklu_olcek_bul(resim_yolu, guven):
+    """Şablonu farklı boyutlarda arar (zoom/çözünürlük değişse de bulur)."""
+    try:
+        import cv2
+        import numpy as np
+    except ImportError:
+        return None
+    sablon = cv2.imread(resim_yolu, cv2.IMREAD_GRAYSCALE)
+    if sablon is None:
+        return None
+    ekran = cv2.cvtColor(np.array(pyautogui.screenshot()), cv2.COLOR_RGB2GRAY)
+
+    en_iyi = None
+    for olcek in (0.7, 0.8, 0.9, 1.1, 1.2, 1.3):
+        s = cv2.resize(sablon, None, fx=olcek, fy=olcek)
+        if s.shape[0] >= ekran.shape[0] or s.shape[1] >= ekran.shape[1]:
+            continue
+        sonuc = cv2.matchTemplate(ekran, s, cv2.TM_CCOEFF_NORMED)
+        _, deger, _, konum = cv2.minMaxLoc(sonuc)
+        if en_iyi is None or deger > en_iyi[0]:
+            en_iyi = (deger, konum, s.shape)
+    if en_iyi and en_iyi[0] >= guven:
+        (h, w) = en_iyi[2]
+        return Nokta(en_iyi[1][0] + w // 2, en_iyi[1][1] + h // 2)
+    return None
+
+
+def butonu_bul(resim_yolu, guven=0.85, gri=False, akilli=False):
     """Ekranda resmi arar; bulursa merkez noktasını döndürür, yoksa None."""
     if not os.path.exists(resim_yolu):
         raise AdimHatasi(f"Buton resmi bulunamadı: {resim_yolu}")
+    nokta = None
     try:
-        return pyautogui.locateCenterOnScreen(resim_yolu, confidence=guven)
+        nokta = pyautogui.locateCenterOnScreen(resim_yolu, confidence=guven,
+                                               grayscale=gri)
     except TypeError:
         # opencv kurulu değilse 'confidence' parametresi desteklenmez
         try:
-            return pyautogui.locateCenterOnScreen(resim_yolu)
+            nokta = pyautogui.locateCenterOnScreen(resim_yolu)
         except Exception:
-            return None
+            nokta = None
     except AdimHatasi:
         raise
     except Exception:
-        # yeni pyautogui sürümleri bulamayınca hata fırlatıyor
-        return None
+        nokta = None
+    if nokta is None and akilli:
+        nokta = _coklu_olcek_bul(resim_yolu, guven)
+    return nokta
+
+
+def hepsini_bul(resim_yolu, guven=0.85, gri=False):
+    """Ekrandaki TÜM eşleşmelerin merkezlerini döndürür."""
+    if not os.path.exists(resim_yolu):
+        raise AdimHatasi(f"Buton resmi bulunamadı: {resim_yolu}")
+    try:
+        kutular = list(pyautogui.locateAllOnScreen(resim_yolu, confidence=guven,
+                                                   grayscale=gri))
+    except TypeError:
+        try:
+            kutular = list(pyautogui.locateAllOnScreen(resim_yolu))
+        except Exception:
+            return []
+    except Exception:
+        return []
+    merkezler = []
+    for k in kutular:
+        x, y = k.left + k.width // 2, k.top + k.height // 2
+        if all(abs(x - mx) > 10 or abs(y - my) > 10 for mx, my in merkezler):
+            merkezler.append((x, y))
+    return merkezler
 
 
 def bip():
@@ -109,6 +188,17 @@ def bip():
         winsound.Beep(880, 250)
     except Exception:
         print("\a", end="", flush=True)
+
+
+def hata_goruntusu_kaydet():
+    """Hata anındaki ekranı hatalar/ klasörüne kaydeder, yolunu döndürür."""
+    try:
+        os.makedirs(HATA_KLASORU, exist_ok=True)
+        yol = os.path.join(HATA_KLASORU, time.strftime("hata_%Y%m%d_%H%M%S.png"))
+        pyautogui.screenshot().save(yol)
+        return yol
+    except Exception:
+        return None
 
 
 # --------------------------------------------------------------- çalıştırıcı
@@ -122,6 +212,7 @@ class TarifCalistirici:
         self.durum_yaz = durum_yaz or (lambda mesaj: None)
         self.durduruldu = threading.Event()
         self._yazici = pynput_klavye.Controller() if pynput_klavye else None
+        self._don_sayaclari = {}
 
     def durdur(self):
         self.durduruldu.set()
@@ -149,7 +240,6 @@ class TarifCalistirici:
         return self.durduruldu.wait(timeout=saniye)
 
     def _sapma(self):
-        """İnsansı modda tıklamaya küçük rastgele kayma ekler."""
         if self.ayarlar["insansi"]:
             return random.randint(-3, 3), random.randint(-3, 3)
         return 0, 0
@@ -174,11 +264,13 @@ class TarifCalistirici:
         else:
             pyautogui.click(x, y)
 
-    def _resim_ara(self, resim, guven, zaman_asimi, kaybolana=False):
-        """Resim görünene (veya kaybolana) kadar bekler. Nokta ya da None döndürür."""
+    def _ara(self, resim, guven, zaman_asimi, kaybolana=False):
+        """Resim görünene (veya kaybolana) kadar bekler."""
+        gri = bool(self.ayarlar["gri_ton"])
+        akilli = bool(self.ayarlar["akilli_arama"])
         son = time.time() + zaman_asimi
         while time.time() < son and not self.durduruldu.is_set():
-            nokta = butonu_bul(resim, guven)
+            nokta = butonu_bul(resim, guven, gri=gri, akilli=akilli)
             if kaybolana:
                 if nokta is None:
                     return True
@@ -188,9 +280,23 @@ class TarifCalistirici:
                 return None
         return None
 
+    @staticmethod
+    def _resim_adi(adim):
+        return os.path.splitext(os.path.basename(adim["resim"]))[0]
+
+    def _hedef_dogrula(self, adim, no):
+        hedef = int(adim["hedef"])
+        if not (1 <= hedef <= len(self.adimlar)):
+            raise AdimHatasi(
+                f"{no}. adım: hedef adım ({hedef}) yok — tarifte {len(self.adimlar)} adım var."
+            )
+        return hedef - 1
+
     # ------------------------------------------------------------- adımlar
 
-    def _adim_uygula(self, no, adim):
+    def _adim_uygula(self, indeks, adim):
+        """True → sıradaki adım, False → durduruldu, ('git', i) → atla."""
+        no = indeks + 1
         tip = adim["tip"]
 
         if tip == "bekle":
@@ -242,45 +348,178 @@ class TarifCalistirici:
             self._tikla(x, y, adim.get("tiklama", "sol"))
             return True
 
+        if tip == "pencere_getir":
+            baslik = adim["baslik"]
+            self.durum_yaz(f"{no}. adım: '{baslik}' penceresi öne getiriliyor...")
+            pencere = None
+            if pygetwindow:
+                try:
+                    for p in pygetwindow.getAllWindows():
+                        if p.title and baslik.lower() in p.title.lower():
+                            pencere = p
+                            break
+                except Exception:
+                    pencere = None
+            if pencere:
+                try:
+                    if pencere.isMinimized:
+                        pencere.restore()
+                    pencere.activate()
+                except Exception:
+                    pass
+                self._bekle(0.5)
+                return True
+            if adim.get("bulunamazsa") == "atla":
+                self.durum_yaz(f"{no}. adım: pencere bulunamadı, atlandı.")
+                return True
+            raise AdimHatasi(f"Başlığında '{baslik}' geçen açık pencere bulunamadı.")
+
+        if tip == "ac":
+            hedef = adim["yol"].strip()
+            self.durum_yaz(f"{no}. adım: açılıyor → {hedef}")
+            try:
+                if hedef.startswith(("http://", "https://", "www.")):
+                    import webbrowser
+                    if hedef.startswith("www."):
+                        hedef = "https://" + hedef
+                    webbrowser.open(hedef)
+                else:
+                    os.startfile(hedef)  # Windows
+            except AttributeError:
+                import subprocess
+                subprocess.Popen([hedef])
+            except OSError as hata:
+                raise AdimHatasi(f"Açılamadı: {hedef} ({hata})")
+            return True
+
+        if tip == "pano":
+            if not pyperclip:
+                raise AdimHatasi("pyperclip kurulu değil — kur.bat'ı yeniden çalıştır.")
+            self.durum_yaz(f"{no}. adım: panoya kopyalanıyor...")
+            pyperclip.copy(adim["metin"])
+            if adim.get("yapistir"):
+                self._bekle(0.1)
+                pyautogui.hotkey("ctrl", "v")
+            return True
+
+        if tip == "ekran_goruntusu":
+            os.makedirs(EKRAN_KLASORU, exist_ok=True)
+            yol = os.path.join(EKRAN_KLASORU,
+                               time.strftime("ekran_%Y%m%d_%H%M%S.png"))
+            pyautogui.screenshot().save(yol)
+            self.durum_yaz(f"{no}. adım: ekran görüntüsü kaydedildi → {yol}")
+            return True
+
+        if tip == "renk_bekle":
+            x, y = int(adim["x"]), int(adim["y"])
+            hedef = tuple(adim["renk"])
+            tolerans = int(adim.get("tolerans", 12))
+            gidene = adim.get("mod") == "gidene"
+            zaman_asimi = float(adim.get("zaman_asimi", 30))
+            ne = "gitmesi" if gidene else "gelmesi"
+            self.durum_yaz(f"{no}. adım: ({x},{y}) noktasında rengin {ne} bekleniyor...")
+            son = time.time() + zaman_asimi
+            while time.time() < son and not self.durduruldu.is_set():
+                piksel = pyautogui.screenshot().getpixel((x, y))[:3]
+                uydu = all(abs(piksel[k] - hedef[k]) <= tolerans for k in range(3))
+                if uydu != gidene:
+                    return True
+                if self._bekle(0.4):
+                    return False
+            if self.durduruldu.is_set():
+                return False
+            raise AdimHatasi(
+                f"({x},{y}) noktasında beklenen renk değişimi {zaman_asimi:.0f} sn içinde olmadı."
+            )
+
+        if tip == "don":
+            kez = int(adim.get("kez", 1))
+            sayac = self._don_sayaclari.get(indeks, 0)
+            if sayac < kez:
+                self._don_sayaclari[indeks] = sayac + 1
+                hedef = self._hedef_dogrula(adim, no)
+                self.durum_yaz(
+                    f"{no}. adım: {adim['hedef']}. adıma dönülüyor ({sayac + 1}/{kez})")
+                return ("git", hedef)
+            self.durum_yaz(f"{no}. adım: döngü tamamlandı, devam ediliyor.")
+            return True
+
+        if tip == "gorunca_git":
+            ad = self._resim_adi(adim)
+            guven = float(adim.get("guven", self.ayarlar["guven"]))
+            nokta = butonu_bul(adim["resim"], guven,
+                               gri=bool(self.ayarlar["gri_ton"]),
+                               akilli=bool(self.ayarlar["akilli_arama"]))
+            gorundu = nokta is not None
+            kosul = gorundu if adim.get("mod", "gorunurse") == "gorunurse" else not gorundu
+            if kosul:
+                hedef = self._hedef_dogrula(adim, no)
+                durum = "görünüyor" if gorundu else "görünmüyor"
+                self.durum_yaz(f"{no}. adım: '{ad}' {durum} → {adim['hedef']}. adıma atlanıyor")
+                return ("git", hedef)
+            self.durum_yaz(f"{no}. adım: koşul sağlanmadı, devam.")
+            return True
+
         if tip == "buton_bekle":
-            resim = adim["resim"]
-            ad = os.path.splitext(os.path.basename(resim))[0]
+            ad = self._resim_adi(adim)
             kaybolana = adim.get("mod", "gorunene") == "kaybolana"
             zaman_asimi = float(adim.get("zaman_asimi", 30))
             guven = float(adim.get("guven", self.ayarlar["guven"]))
             ne = "kaybolması" if kaybolana else "görünmesi"
             self.durum_yaz(f"{no}. adım: '{ad}' butonunun {ne} bekleniyor...")
-            sonuc = self._resim_ara(resim, guven, zaman_asimi, kaybolana=kaybolana)
+            sonuc = self._ara(adim["resim"], guven, zaman_asimi, kaybolana=kaybolana)
             if self.durduruldu.is_set():
                 return False
             if sonuc is None:
-                raise AdimHatasi(
-                    f"'{ad}' butonunun {ne} {zaman_asimi:.0f} sn içinde gerçekleşmedi."
-                )
+                raise AdimHatasi(f"'{ad}' butonunun {ne} {zaman_asimi:.0f} sn içinde gerçekleşmedi.")
             return True
 
         if tip == "butona_tikla":
-            resim = adim["resim"]
-            ad = os.path.splitext(os.path.basename(resim))[0]
+            ad = self._resim_adi(adim)
             zaman_asimi = float(adim.get("zaman_asimi", 10))
             guven = float(adim.get("guven", self.ayarlar["guven"]))
-            self.durum_yaz(f"{no}. adım: '{ad}' butonu ekranda aranıyor...")
+            kx, ky = int(adim.get("kaydir_x", 0)), int(adim.get("kaydir_y", 0))
+            tiklama = adim.get("tiklama", "sol")
 
-            nokta = self._resim_ara(resim, guven, zaman_asimi)
+            if adim.get("hepsi"):
+                self.durum_yaz(f"{no}. adım: '{ad}' için TÜM eşleşmeler aranıyor...")
+                gri = bool(self.ayarlar["gri_ton"])
+                son = time.time() + zaman_asimi
+                merkezler = []
+                while time.time() < son and not self.durduruldu.is_set():
+                    merkezler = hepsini_bul(adim["resim"], guven, gri=gri)
+                    if merkezler:
+                        break
+                    if self._bekle(0.4):
+                        return False
+                if self.durduruldu.is_set():
+                    return False
+                if not merkezler:
+                    if adim.get("bulunamazsa") == "atla":
+                        self.durum_yaz(f"{no}. adım: '{ad}' bulunamadı, atlandı.")
+                        return True
+                    raise AdimHatasi(f"'{ad}' butonu {zaman_asimi:.0f} sn içinde bulunamadı.")
+                for x, y in merkezler:
+                    if self.durduruldu.is_set():
+                        return False
+                    self._tikla(x + kx, y + ky, tiklama)
+                self.durum_yaz(f"{no}. adım: {len(merkezler)} eşleşmeye tıklandı.")
+                return True
+
+            self.durum_yaz(f"{no}. adım: '{ad}' butonu ekranda aranıyor...")
+            nokta = self._ara(adim["resim"], guven, zaman_asimi)
             if self.durduruldu.is_set():
                 return False
             if not nokta:
-                if adim.get("bulunamazsa", "hata") == "atla":
+                if adim.get("bulunamazsa") == "atla":
                     self.durum_yaz(f"{no}. adım: '{ad}' bulunamadı, atlandı.")
                     return True
                 raise AdimHatasi(
                     f"'{ad}' butonu {zaman_asimi:.0f} sn içinde ekranda bulunamadı. "
                     f"Butonun göründüğünden emin ol; gerekirse hassasiyeti düşür."
                 )
-
-            x = int(nokta.x) + int(adim.get("kaydir_x", 0))
-            y = int(nokta.y) + int(adim.get("kaydir_y", 0))
-            self._tikla(x, y, adim.get("tiklama", "sol"))
+            x, y = int(nokta.x) + kx, int(nokta.y) + ky
+            self._tikla(x, y, tiklama)
             self.durum_yaz(f"{no}. adım: '{ad}' tıklandı ({x}, {y}).")
             return True
 
@@ -292,27 +531,47 @@ class TarifCalistirici:
         """tekrar=0 → durdurulana kadar sonsuz. Dönüş: (başarılı_mı, mesaj)."""
         dinleyici = self._durdurma_dinleyici()
         tur = 0
+        baslangic = time.time()
         try:
             while not self.durduruldu.is_set():
                 tur += 1
                 etiket = f"{tur}" if tekrar == 0 else f"{tur}/{tekrar}"
                 self.durum_yaz(f"— Tur {etiket} —")
-                for no, adim in enumerate(self.adimlar, 1):
-                    if self.durduruldu.is_set():
+                self._don_sayaclari = {}
+
+                i = 0
+                atlama_sayisi = 0
+                while i < len(self.adimlar) and not self.durduruldu.is_set():
+                    sonuc = self._adim_uygula(i, self.adimlar[i])
+                    if sonuc is False:
                         break
-                    if not self._adim_uygula(no, adim):
-                        break
+                    if isinstance(sonuc, tuple):
+                        i = sonuc[1]
+                        atlama_sayisi += 1
+                        if atlama_sayisi > 10000:
+                            raise AdimHatasi(
+                                "Sonsuz döngü algılandı (10.000 atlama) — tarifi kontrol et.")
+                    else:
+                        i += 1
                     if self._bekle(float(self.ayarlar["adim_arasi"])):
                         break
+
                 if tekrar != 0 and tur >= tekrar:
                     break
                 if self._bekle(float(self.ayarlar["tur_arasi"])):
                     break
+
+            sure = time.time() - baslangic
             if self.durduruldu.is_set():
-                return False, f"Durduruldu ({self.ayarlar['durdur_tusu'].upper()})."
-            return True, f"Tamamlandı ({tur} tur)."
+                return False, f"Durduruldu ({self.ayarlar['durdur_tusu'].upper()}) — {tur} tur, {sure:.0f} sn."
+            return True, f"Tamamlandı — {tur} tur, {sure:.0f} sn."
         except AdimHatasi as hata:
-            return False, str(hata)
+            mesaj = str(hata)
+            if self.ayarlar.get("hata_goruntusu"):
+                yol = hata_goruntusu_kaydet()
+                if yol:
+                    mesaj += f"  [ekran görüntüsü: {yol}]"
+            return False, mesaj
         except pyautogui.FailSafeException:
             return False, "Acil durdurma: fare sol üst köşeye götürüldü."
         finally:
@@ -325,9 +584,19 @@ class TarifCalistirici:
 def tarif_kaydet(adimlar, yol):
     os.makedirs(os.path.dirname(yol) or ".", exist_ok=True)
     with open(yol, "w", encoding="utf-8") as f:
-        json.dump({"surum": 2, "adimlar": adimlar}, f, ensure_ascii=False, indent=2)
+        json.dump({"surum": 3, "adimlar": adimlar}, f, ensure_ascii=False, indent=2)
 
 
 def tarif_yukle(yol):
     with open(yol, "r", encoding="utf-8") as f:
         return json.load(f)["adimlar"]
+
+
+def acik_pencere_basliklari():
+    """Açık pencere başlıklarını döndürür (pencere seçim listesi için)."""
+    if not pygetwindow:
+        return []
+    try:
+        return sorted({p for p in pygetwindow.getAllTitles() if p and p.strip()})
+    except Exception:
+        return []

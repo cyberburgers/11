@@ -9,6 +9,7 @@ Bot butonları EKRANDA GÖRÜNTÜSÜNDEN TANIR ve tarifi sırasıyla uygular.
 Global kısayollar (Ayarlar'dan değiştirilebilir):  F8 = başlat, ESC = durdur
 """
 
+import datetime
 import os
 import sys
 import threading
@@ -31,6 +32,8 @@ from motor import (
     ayarlari_yukle,
     ayarlari_kaydet,
     ozel_tus,
+    bip,
+    acik_pencere_basliklari,
     TARIF_KLASORU,
     BUTON_KLASORU,
 )
@@ -81,6 +84,14 @@ def giris_yap(ana, deger="", genislik=None):
     if deger != "":
         e.insert(0, str(deger))
     return e
+
+
+def onay_kutusu(ana, metin, degisken):
+    return tk.Checkbutton(
+        ana, text=metin, variable=degisken, bg=KART, fg=YAZI,
+        selectcolor=KART_2, activebackground=KART, activeforeground=YAZI,
+        font=FONT, anchor="w",
+    )
 
 
 # ------------------------------------------------------- bölge seçici
@@ -170,7 +181,7 @@ class Diyalog(tk.Toplevel):
 
     def ipucu(self, metin):
         tk.Label(self.govde, text=metin, bg=KART, fg=SOLUK, font=FONT_K,
-                 anchor="w", wraplength=320, justify="left").pack(fill="x")
+                 anchor="w", wraplength=330, justify="left").pack(fill="x")
 
     def onay_satiri(self, tamam_metni="Tamam"):
         satir = tk.Frame(self.govde, bg=KART)
@@ -242,6 +253,10 @@ class ButonAyarDiyalog(Diyalog):
                              else "Hata ver, dur")
         self.bulunamazsa.grid(row=1, column=1, padx=6, pady=(6, 0))
 
+        self.hepsi = tk.BooleanVar(value=bool(ilk.get("hepsi")))
+        onay_kutusu(self.govde, "Ekrandaki TÜM eşleşmelere tıkla",
+                    self.hepsi).pack(fill="x", pady=(8, 0))
+
         self.etiket("Tanıma hassasiyeti:")
         self.guven = tk.Scale(self.govde, from_=0.5, to=0.99, resolution=0.01,
                               orient="horizontal", bg=KART, fg=YAZI,
@@ -259,7 +274,6 @@ class ButonAyarDiyalog(Diyalog):
         tk.Label(satir2, text="Dikey:", bg=KART, fg=SOLUK, font=FONT_K).pack(side="left")
         self.ky = giris_yap(satir2, ilk.get("kaydir_y", 0), 5)
         self.ky.pack(side="left", padx=4)
-        self.ipucu("Örn. butonun 20px sağına tıklamak için Yatay = 20.")
 
         self.onay_satiri("Tamam")
         self.wait_window()
@@ -283,6 +297,7 @@ class ButonAyarDiyalog(Diyalog):
             "guven": float(self.guven.get()),
             "kaydir_x": tam(self.kx),
             "kaydir_y": tam(self.ky),
+            "hepsi": bool(self.hepsi.get()),
         }
 
 
@@ -321,6 +336,69 @@ class ButonBekleDiyalog(Diyalog):
         }
 
 
+class GorunceGitDiyalog(Diyalog):
+    """Koşullu atlama: resim görünüyorsa/görünmüyorsa şu adıma git."""
+
+    def __init__(self, kok, varsayilan_ad, adim_sayisi, ilk=None):
+        super().__init__(kok, "Koşullu Atlama")
+        ilk = ilk or {}
+        self.etiket("İsim:")
+        self.ad = giris_yap(self.govde, ilk.get("ad", varsayilan_ad))
+        self.ad.pack(fill="x", ipady=5)
+        self.etiket("Koşul:")
+        self.mod = ttk.Combobox(self.govde, state="readonly",
+                                values=["Görünüyorsa atla", "Görünmüyorsa atla"])
+        self.mod.set("Görünmüyorsa atla" if ilk.get("mod") == "gorunmezse"
+                     else "Görünüyorsa atla")
+        self.mod.pack(fill="x")
+        self.etiket("Hangi adıma atlansın? (listedeki numara)")
+        self.hedef = giris_yap(self.govde, ilk.get("hedef", 1), 6)
+        self.hedef.pack(anchor="w", ipady=4)
+        self.ipucu(f"Tarifte şu an {adim_sayisi} adım var.\n"
+                   "Örnek kullanım: hata penceresi GÖRÜNÜYORSA → onu kapatan adıma atla.")
+        self.onay_satiri("Tamam")
+        self.wait_window()
+
+    def topla(self):
+        ad = self.ad.get().strip()
+        if not ad:
+            return None
+        try:
+            hedef = max(1, int(self.hedef.get()))
+        except ValueError:
+            return None
+        return {
+            "ad": ad,
+            "mod": "gorunmezse" if self.mod.get().startswith("Görünmüyorsa") else "gorunurse",
+            "hedef": hedef,
+        }
+
+
+class DonDiyalog(Diyalog):
+    """Döngü: belirtilen adıma geri dön, en fazla N kez."""
+
+    def __init__(self, kok, adim_sayisi, ilk=None):
+        super().__init__(kok, "Döngü (Adıma Dön)")
+        ilk = ilk or {}
+        self.etiket("Hangi adıma geri dönülsün? (listedeki numara)")
+        self.hedef = giris_yap(self.govde, ilk.get("hedef", 1), 6)
+        self.hedef.pack(anchor="w", ipady=4)
+        self.etiket("Kaç kez dönülsün?")
+        self.kez = giris_yap(self.govde, ilk.get("kez", 3), 6)
+        self.kez.pack(anchor="w", ipady=4)
+        self.ipucu(f"Tarifte şu an {adim_sayisi} adım var.\n"
+                   "Örn: 2. adıma dön × 5 → aradaki adımlar toplam 6 kez çalışır.")
+        self.onay_satiri("Tamam")
+        self.wait_window()
+
+    def topla(self):
+        try:
+            return {"hedef": max(1, int(self.hedef.get())),
+                    "kez": max(1, int(self.kez.get()))}
+        except ValueError:
+            return None
+
+
 class KonumDiyalog(Diyalog):
     def __init__(self, kok, x, y, ilk=None):
         super().__init__(kok, "Konuma Tıkla")
@@ -351,6 +429,151 @@ class KonumDiyalog(Diyalog):
             }
         except ValueError:
             return None
+
+
+class RenkDiyalog(Diyalog):
+    """Bir noktadaki renk gelene/gidene kadar bekleme."""
+
+    def __init__(self, kok, x, y, renk, ilk=None):
+        super().__init__(kok, "Renk Bekleme")
+        ilk = ilk or {}
+        renk = list(ilk.get("renk", renk))
+
+        onizleme = tk.Frame(self.govde, bg=KART)
+        onizleme.pack(fill="x")
+        tk.Label(onizleme, text="Yakalanan renk:", bg=KART, fg=YAZI,
+                 font=FONT).pack(side="left")
+        self.renk = renk
+        self.renk_kutusu = tk.Frame(
+            onizleme, width=44, height=22,
+            bg="#%02x%02x%02x" % tuple(renk[:3]),
+            highlightthickness=1, highlightbackground=SOLUK,
+        )
+        self.renk_kutusu.pack(side="left", padx=8)
+
+        self.etiket("Nokta:")
+        satir = tk.Frame(self.govde, bg=KART)
+        satir.pack(fill="x")
+        tk.Label(satir, text="X:", bg=KART, fg=SOLUK, font=FONT).pack(side="left")
+        self.x = giris_yap(satir, ilk.get("x", x), 7)
+        self.x.pack(side="left", padx=(4, 12))
+        tk.Label(satir, text="Y:", bg=KART, fg=SOLUK, font=FONT).pack(side="left")
+        self.y = giris_yap(satir, ilk.get("y", y), 7)
+        self.y.pack(side="left", padx=4)
+
+        self.etiket("Ne beklensin?")
+        self.mod = ttk.Combobox(self.govde, state="readonly",
+                                values=["Bu renk GELENE kadar bekle",
+                                        "Bu renk GİDENE kadar bekle"])
+        self.mod.set("Bu renk GİDENE kadar bekle" if ilk.get("mod") == "gidene"
+                     else "Bu renk GELENE kadar bekle")
+        self.mod.pack(fill="x")
+
+        satir2 = tk.Frame(self.govde, bg=KART)
+        satir2.pack(fill="x", pady=(8, 0))
+        tk.Label(satir2, text="Tolerans:", bg=KART, fg=YAZI, font=FONT).grid(
+            row=0, column=0, sticky="w")
+        self.tolerans = giris_yap(satir2, ilk.get("tolerans", 12), 6)
+        self.tolerans.grid(row=0, column=1, padx=6)
+        tk.Label(satir2, text="En fazla bekle (sn):", bg=KART, fg=YAZI,
+                 font=FONT).grid(row=1, column=0, sticky="w", pady=(6, 0))
+        self.sure = giris_yap(satir2, ilk.get("zaman_asimi", 30), 6)
+        self.sure.grid(row=1, column=1, padx=6, pady=(6, 0))
+        self.ipucu("Örn: işlem bitince yeşile dönen bir gösterge varsa\n"
+                   "'yeşil GELENE kadar bekle' dersin.")
+        self.onay_satiri("Tamam")
+        self.wait_window()
+
+    def topla(self):
+        try:
+            return {
+                "x": int(self.x.get()),
+                "y": int(self.y.get()),
+                "renk": list(self.renk[:3]),
+                "mod": "gidene" if "GİDENE" in self.mod.get() else "gelene",
+                "tolerans": max(0, int(self.tolerans.get())),
+                "zaman_asimi": max(1, float(self.sure.get().replace(",", "."))),
+            }
+        except ValueError:
+            return None
+
+
+class PencereDiyalog(Diyalog):
+    def __init__(self, kok, ilk=None):
+        super().__init__(kok, "Pencere Öne Getir")
+        ilk = ilk or {}
+        self.etiket("Pencere başlığı (bir kısmı yeterli):")
+        self.baslik = ttk.Combobox(self.govde, values=acik_pencere_basliklari())
+        self.baslik.set(ilk.get("baslik", ""))
+        self.baslik.pack(fill="x")
+        self.etiket("Bulunamazsa:")
+        self.bulunamazsa = ttk.Combobox(self.govde, state="readonly",
+                                        values=["Hata ver, dur", "Atla, devam et"])
+        self.bulunamazsa.set("Atla, devam et" if ilk.get("bulunamazsa") == "atla"
+                             else "Hata ver, dur")
+        self.bulunamazsa.pack(fill="x")
+        self.ipucu("Listede şu an açık pencereler var; seç ya da elle yaz.\n"
+                   "Örn: 'Not Defteri' veya 'Chrome'.")
+        self.onay_satiri("Tamam")
+        self.wait_window()
+
+    def topla(self):
+        baslik = self.baslik.get().strip()
+        if not baslik:
+            return None
+        return {"baslik": baslik,
+                "bulunamazsa": "atla" if self.bulunamazsa.get().startswith("Atla") else "hata"}
+
+
+class AcDiyalog(Diyalog):
+    def __init__(self, kok, ilk=None):
+        super().__init__(kok, "Program / Site Aç")
+        self.etiket("Ne açılsın?")
+        satir = tk.Frame(self.govde, bg=KART)
+        satir.pack(fill="x")
+        self.yol = giris_yap(satir, (ilk or {}).get("yol", ""), 34)
+        self.yol.pack(side="left", fill="x", expand=True, ipady=5)
+        buton_yap(satir, "Gözat…", KART_2, self._gozat).pack(side="left", padx=(6, 0))
+        self.yol.focus_set()
+        self.ipucu("Örnekler:\n"
+                   "  https://www.google.com   (web sitesi)\n"
+                   "  notepad   (program adı)\n"
+                   "  C:\\Users\\...\\uygulama.exe   (dosya yolu)")
+        self.onay_satiri("Tamam")
+        self.wait_window()
+
+    def _gozat(self):
+        yol = filedialog.askopenfilename(parent=self, title="Program/dosya seç")
+        if yol:
+            self.yol.delete(0, "end")
+            self.yol.insert(0, yol)
+
+    def topla(self):
+        yol = self.yol.get().strip()
+        return {"yol": yol} if yol else None
+
+
+class PanoDiyalog(Diyalog):
+    def __init__(self, kok, ilk=None):
+        super().__init__(kok, "Panoya Kopyala")
+        ilk = ilk or {}
+        self.etiket("Panoya kopyalanacak metin:")
+        self.metin = giris_yap(self.govde, ilk.get("metin", ""), 42)
+        self.metin.pack(fill="x", ipady=5)
+        self.metin.focus_set()
+        self.yapistir = tk.BooleanVar(value=ilk.get("yapistir", True))
+        onay_kutusu(self.govde, "Kopyaladıktan sonra yapıştır (Ctrl+V)",
+                    self.yapistir).pack(fill="x", pady=(8, 0))
+        self.ipucu("Doğrudan yazmanın çalışmadığı yerlerde (bazı oyunlar,\n"
+                   "uzak masaüstü) yapıştırma daha güvenilirdir.")
+        self.onay_satiri("Tamam")
+        self.wait_window()
+
+    def topla(self):
+        metin = self.metin.get()
+        if not metin:
+            return None
+        return {"metin": metin, "yapistir": bool(self.yapistir.get())}
 
 
 class BekleDiyalog(Diyalog):
@@ -485,6 +708,54 @@ class KaydirDiyalog(Diyalog):
                 "miktar": miktar}
 
 
+class ZamanlamaDiyalog(Diyalog):
+    """Otomatik başlatma zamanlaması."""
+
+    def __init__(self, kok, ilk=None):
+        super().__init__(kok, "Zamanlama")
+        ilk = ilk or {}
+        self.etiket("Otomatik başlatma:")
+        self.mod = ttk.Combobox(self.govde, state="readonly",
+                                values=["Kapalı", "Belirli saatte başlat",
+                                        "Her N dakikada bir başlat"])
+        secili = {"saat": "Belirli saatte başlat",
+                  "periyot": "Her N dakikada bir başlat"}.get(ilk.get("mod"), "Kapalı")
+        self.mod.set(secili)
+        self.mod.pack(fill="x")
+
+        self.etiket("Saat (SS:DD — örn. 09:30):")
+        self.saat = giris_yap(self.govde, ilk.get("saat", "09:00"), 8)
+        self.saat.pack(anchor="w", ipady=4)
+
+        self.etiket("Kaç dakikada bir? (ilk çalıştırma hemen yapılır)")
+        self.dakika = giris_yap(self.govde, ilk.get("dakika", 30), 8)
+        self.dakika.pack(anchor="w", ipady=4)
+
+        self.ipucu("Zamanlama, program açık kaldığı sürece çalışır.\n"
+                   "Tekrar sayısı olarak ÇALIŞTIR bölümündeki değer kullanılır.")
+        self.onay_satiri("Kaydet")
+        self.wait_window()
+
+    def topla(self):
+        mod = self.mod.get()
+        if mod == "Kapalı":
+            return {"mod": "kapali"}
+        if mod.startswith("Belirli"):
+            try:
+                s, d = self.saat.get().strip().split(":")
+                saat = f"{int(s):02d}:{int(d):02d}"
+                if not (0 <= int(s) <= 23 and 0 <= int(d) <= 59):
+                    return None
+            except ValueError:
+                return None
+            return {"mod": "saat", "saat": saat}
+        try:
+            dakika = max(1, int(self.dakika.get()))
+        except ValueError:
+            return None
+        return {"mod": "periyot", "dakika": dakika}
+
+
 # ---------------------------------------------------------- ayarlar paneli
 class AyarlarDiyalog(Diyalog):
     KISAYOLLAR = ["f2", "f3", "f4", "f6", "f7", "f8", "f9", "f10", "f11", "f12", "esc"]
@@ -500,31 +771,38 @@ class AyarlarDiyalog(Diyalog):
         self.guven.set(a["guven"])
         self.guven.pack(fill="x")
 
-        self.etiket("Fare hedefe kaç saniyede gitsin? (0 = ışınlan)")
-        self.fare = giris_yap(self.govde, a["fare_hizi"], 8)
-        self.fare.pack(anchor="w", ipady=4)
-
         satir = tk.Frame(self.govde, bg=KART)
         satir.pack(fill="x", pady=(8, 0))
-        tk.Label(satir, text="Adımlar arası bekleme (sn):", bg=KART, fg=YAZI,
-                 font=FONT).grid(row=0, column=0, sticky="w")
-        self.adim_arasi = giris_yap(satir, a["adim_arasi"], 7)
-        self.adim_arasi.grid(row=0, column=1, padx=6)
-        tk.Label(satir, text="Turlar arası bekleme (sn):", bg=KART, fg=YAZI,
-                 font=FONT).grid(row=1, column=0, sticky="w", pady=(6, 0))
-        self.tur_arasi = giris_yap(satir, a["tur_arasi"], 7)
-        self.tur_arasi.grid(row=1, column=1, padx=6, pady=(6, 0))
-        tk.Label(satir, text="Başlarken geri sayım (sn):", bg=KART, fg=YAZI,
-                 font=FONT).grid(row=2, column=0, sticky="w", pady=(6, 0))
-        self.geri_sayim = giris_yap(satir, a["geri_sayim"], 7)
-        self.geri_sayim.grid(row=2, column=1, padx=6, pady=(6, 0))
+        etiketler = (
+            ("Fare hızı (sn, 0 = ışınlan):", "fare", a["fare_hizi"]),
+            ("Adımlar arası bekleme (sn):", "adim_arasi", a["adim_arasi"]),
+            ("Turlar arası bekleme (sn):", "tur_arasi", a["tur_arasi"]),
+            ("Başlarken geri sayım (sn):", "geri_sayim", a["geri_sayim"]),
+        )
+        self._girisler = {}
+        for i, (metin, anahtar, deger) in enumerate(etiketler):
+            tk.Label(satir, text=metin, bg=KART, fg=YAZI, font=FONT).grid(
+                row=i, column=0, sticky="w", pady=(0 if i == 0 else 6, 0))
+            kutu = giris_yap(satir, deger, 7)
+            kutu.grid(row=i, column=1, padx=6, pady=(0 if i == 0 else 6, 0))
+            self._girisler[anahtar] = kutu
 
+        self.etiket("Akıllı özellikler:")
+        self.akilli = tk.BooleanVar(value=a["akilli_arama"])
+        onay_kutusu(self.govde, "Akıllı arama — zoom/çözünürlük değişse de bul",
+                    self.akilli).pack(fill="x")
+        self.gri = tk.BooleanVar(value=a["gri_ton"])
+        onay_kutusu(self.govde, "Hızlı arama (gri tonlama) — büyük ekranlarda hızlandırır",
+                    self.gri).pack(fill="x")
         self.insansi = tk.BooleanVar(value=a["insansi"])
-        tk.Checkbutton(
-            self.govde, text="İnsansı mod (küçük rastgele sapma ve gecikmeler)",
-            variable=self.insansi, bg=KART, fg=YAZI, selectcolor=KART_2,
-            activebackground=KART, activeforeground=YAZI, font=FONT,
-        ).pack(anchor="w", pady=(10, 0))
+        onay_kutusu(self.govde, "İnsansı mod — küçük rastgele sapma ve gecikmeler",
+                    self.insansi).pack(fill="x")
+        self.hata_g = tk.BooleanVar(value=a["hata_goruntusu"])
+        onay_kutusu(self.govde, "Hata anında ekran görüntüsünü kaydet (hatalar/)",
+                    self.hata_g).pack(fill="x")
+        self.bitis = tk.BooleanVar(value=a["bitis_sesi"])
+        onay_kutusu(self.govde, "İş bitince bip sesi çal",
+                    self.bitis).pack(fill="x")
 
         self.etiket("Kısayol tuşları:")
         satir2 = tk.Frame(self.govde, bg=KART)
@@ -544,9 +822,9 @@ class AyarlarDiyalog(Diyalog):
         self.wait_window()
 
     def topla(self):
-        def sayi(kutu, varsayilan):
+        def sayi(anahtar, varsayilan):
             try:
-                return max(0.0, float(kutu.get().replace(",", ".")))
+                return max(0.0, float(self._girisler[anahtar].get().replace(",", ".")))
             except ValueError:
                 return varsayilan
 
@@ -556,11 +834,15 @@ class AyarlarDiyalog(Diyalog):
             return None
         return {
             "guven": float(self.guven.get()),
-            "fare_hizi": sayi(self.fare, 0.2),
-            "adim_arasi": sayi(self.adim_arasi, 0.05),
-            "tur_arasi": sayi(self.tur_arasi, 0.0),
-            "geri_sayim": int(sayi(self.geri_sayim, 3)),
+            "fare_hizi": sayi("fare", 0.2),
+            "adim_arasi": sayi("adim_arasi", 0.05),
+            "tur_arasi": sayi("tur_arasi", 0.0),
+            "geri_sayim": int(sayi("geri_sayim", 3)),
+            "akilli_arama": bool(self.akilli.get()),
+            "gri_ton": bool(self.gri.get()),
             "insansi": bool(self.insansi.get()),
+            "hata_goruntusu": bool(self.hata_g.get()),
+            "bitis_sesi": bool(self.bitis.get()),
             "baslat_tusu": self.baslat.get(),
             "durdur_tusu": self.durdur.get(),
         }
@@ -571,20 +853,22 @@ class ButonBotu:
     def __init__(self, kok):
         self.kok = kok
         kok.title("Buton Botu PRO")
-        kok.geometry("520x780")
-        kok.minsize(480, 640)
+        kok.geometry("540x800")
+        kok.minsize(500, 660)
         kok.configure(bg=ARKA)
 
         self.ayarlar = ayarlari_yukle()
         self.adimlar = []
         self.calistirici = None
         self.mesgul = False
-        self._yakalama_modu = "tikla"   # "tikla" | "bekle"
-        self._duzenlenen = None          # düzenlenen adımın sırası
+        self.zamanlama = None            # {"mod": ..., "sonraki": epoch, ...}
+        self._yakalama_modu = "tikla"    # "tikla" | "bekle" | "git"
+        self._duzenlenen = None
 
         self._kur()
         self._son_tarifi_yukle()
         self._global_kisayollar()
+        self._zaman_kontrol()
         kok.protocol("WM_DELETE_WINDOW", self._kapat)
 
     # ------------------------------------------------------------- arayüz
@@ -611,18 +895,32 @@ class ButonBotu:
             self.kok, tearoff=0, bg=KART_2, fg=YAZI, font=FONT,
             activebackground=MAVI, activeforeground="white", bd=0,
         )
-        for metin, komut in (
+        menu_ogeleri = (
             ("🎯  Konuma tıkla (sabit nokta)", self.konum_adimi),
             ("👁  Buton görünene/kaybolana kadar bekle", self.buton_bekle_adimi),
+            ("🎨  Renk gelene/gidene kadar bekle", self.renk_adimi),
             ("⏱  Bekle", self.bekle_adimi),
             ("🎲  Rastgele bekle", self.rastgele_adimi),
+            None,
             ("⌨  Yazı yaz", self.yazi_adimi),
+            ("📋  Panoya kopyala (+yapıştır)", self.pano_adimi),
             ("↵  Tuşa bas", self.tus_adimi),
             ("⌃  Kısayol bas (ctrl+c gibi)", self.kisayol_adimi),
             ("🖱  Tekerlek kaydır", self.kaydir_adimi),
+            None,
+            ("🔀  Görünürse şu adıma atla (koşul)", self.gorunca_git_adimi),
+            ("🔁  Şu adıma geri dön (döngü)", self.don_adimi),
+            None,
+            ("🪟  Pencereyi öne getir", self.pencere_adimi),
+            ("🚀  Program / site aç", self.ac_adimi),
+            ("📸  Ekran görüntüsü kaydet", self.ekran_adimi),
             ("🔔  Bip sesi çal", self.ses_adimi),
-        ):
-            self.diger_menu.add_command(label=metin, command=komut)
+        )
+        for oge in menu_ogeleri:
+            if oge is None:
+                self.diger_menu.add_separator()
+            else:
+                self.diger_menu.add_command(label=oge[0], command=oge[1])
 
         diger = buton_yap(satir, "➕ Diğer Adımlar ▾", KART_2, None)
         diger.config(command=lambda: self.diger_menu.tk_popup(
@@ -668,6 +966,7 @@ class ButonBotu:
                  font=FONT).pack(side="left")
         self.tekrar = giris_yap(ayar, "1", 7)
         self.tekrar.pack(side="left", padx=8, ipady=3)
+        buton_yap(ayar, "⏰ Zamanla", KART_2, self.zamanla).pack(side="right")
 
         calistir_satir = tk.Frame(kart_calistir, bg=KART)
         calistir_satir.pack(fill="x", padx=12, pady=(8, 12))
@@ -696,8 +995,14 @@ class ButonBotu:
         self.durum_etiket.pack(side="bottom", fill="x")
 
     def _hazir_metni(self):
-        return (f"Hazır  •  Başlat: {self.ayarlar['baslat_tusu'].upper()}"
-                f"  •  Durdur: {self.ayarlar['durdur_tusu'].upper()}")
+        metin = (f"Hazır  •  Başlat: {self.ayarlar['baslat_tusu'].upper()}"
+                 f"  •  Durdur: {self.ayarlar['durdur_tusu'].upper()}")
+        if self.zamanlama:
+            if self.zamanlama["mod"] == "saat":
+                metin += f"  •  ⏰ her gün {self.zamanlama['saat']}"
+            else:
+                metin += f"  •  ⏰ her {self.zamanlama['dakika']} dk"
+        return metin
 
     # ------------------------------------------------------------ yardımcı
     def durum(self, metin, renk=SOLUK):
@@ -723,16 +1028,30 @@ class ButonBotu:
             ad = os.path.splitext(os.path.basename(adim["resim"]))[0]
             sekil = {"sol": "tıkla", "cift": "çift tıkla",
                      "sag": "sağ tıkla"}[adim.get("tiklama", "sol")]
-            ek = "  (yoksa atla)" if adim.get("bulunamazsa") == "atla" else ""
+            ekler = []
+            if adim.get("hepsi"):
+                ekler.append("hepsine")
+            if adim.get("bulunamazsa") == "atla":
+                ekler.append("yoksa atla")
+            ek = f"  ({', '.join(ekler)})" if ekler else ""
             return f"📷  '{ad}' butonunu bul, {sekil}{ek}"
         if tip == "buton_bekle":
             ad = os.path.splitext(os.path.basename(adim["resim"]))[0]
             ne = "kaybolana" if adim.get("mod") == "kaybolana" else "görünene"
             return f"👁  '{ad}' {ne} kadar bekle"
+        if tip == "gorunca_git":
+            ad = os.path.splitext(os.path.basename(adim["resim"]))[0]
+            kosul = "görünmüyorsa" if adim.get("mod") == "gorunmezse" else "görünüyorsa"
+            return f"🔀  '{ad}' {kosul} → {adim['hedef']}. adıma atla"
+        if tip == "don":
+            return f"🔁  {adim['hedef']}. adıma dön  ({adim.get('kez', 1)} kez)"
         if tip == "tikla_koordinat":
             sekil = {"sol": "tıkla", "cift": "çift tıkla",
                      "sag": "sağ tıkla"}[adim.get("tiklama", "sol")]
             return f"🎯  ({adim['x']}, {adim['y']}) noktasına {sekil}"
+        if tip == "renk_bekle":
+            ne = "gidene" if adim.get("mod") == "gidene" else "gelene"
+            return f"🎨  ({adim['x']},{adim['y']}) rengi {ne} kadar bekle"
         if tip == "bekle":
             return f"⏱  {adim['sure']} saniye bekle"
         if tip == "rastgele_bekle":
@@ -740,6 +1059,10 @@ class ButonBotu:
         if tip == "yazi":
             kisa = adim["metin"][:26] + ("…" if len(adim["metin"]) > 26 else "")
             return f"⌨  Yaz: \"{kisa}\""
+        if tip == "pano":
+            kisa = adim["metin"][:22] + ("…" if len(adim["metin"]) > 22 else "")
+            ek = " + yapıştır" if adim.get("yapistir") else ""
+            return f"📋  Panoya: \"{kisa}\"{ek}"
         if tip == "tus":
             kac = int(adim.get("tekrar", 1))
             ek = f" ({kac} kez)" if kac > 1 else ""
@@ -749,6 +1072,13 @@ class ButonBotu:
         if tip == "kaydir":
             yon = "aşağı" if adim.get("yon") == "asagi" else "yukarı"
             return f"🖱  Tekerleği {yon} kaydır ({adim['miktar']})"
+        if tip == "pencere_getir":
+            return f"🪟  '{adim['baslik']}' penceresini öne getir"
+        if tip == "ac":
+            kisa = adim["yol"][:32] + ("…" if len(adim["yol"]) > 32 else "")
+            return f"🚀  Aç: {kisa}"
+        if tip == "ekran_goruntusu":
+            return "📸  Ekran görüntüsü kaydet"
         if tip == "ses":
             return "🔔  Bip sesi çal"
         return "?"
@@ -767,20 +1097,19 @@ class ButonBotu:
 
     # ---------------------------------------------------- buton yakalama
     def buton_adimi(self):
-        if self.mesgul:
-            return
-        self._yakalama_modu = "tikla"
-        self._duzenlenen = None
-        self._yakalamayi_baslat()
+        self._yakalama_baslat("tikla")
 
     def buton_bekle_adimi(self):
+        self._yakalama_baslat("bekle")
+
+    def gorunca_git_adimi(self):
+        self._yakalama_baslat("git")
+
+    def _yakalama_baslat(self, mod):
         if self.mesgul:
             return
-        self._yakalama_modu = "bekle"
+        self._yakalama_modu = mod
         self._duzenlenen = None
-        self._yakalamayi_baslat()
-
-    def _yakalamayi_baslat(self):
         self.durum("Butonun olduğu pencereyi öne getir — 3 sn sonra ekran fotoğrafı çekilecek!", TURUNCU)
         self.kok.withdraw()
         self.kok.after(3000, self._foto_cek)
@@ -808,6 +1137,8 @@ class ButonBotu:
 
         if self._yakalama_modu == "bekle":
             ayar = ButonBekleDiyalog(self.kok, varsayilan).sonuc
+        elif self._yakalama_modu == "git":
+            ayar = GorunceGitDiyalog(self.kok, varsayilan, len(self.adimlar)).sonuc
         else:
             ayar = ButonAyarDiyalog(self.kok, varsayilan, self.ayarlar["guven"],
                                     resim_yolu=gecici_yol).sonuc
@@ -833,12 +1164,18 @@ class ButonBotu:
                 "tip": "buton_bekle", "resim": yol,
                 "mod": ayar["mod"], "zaman_asimi": ayar["zaman_asimi"],
             })
+        elif self._yakalama_modu == "git":
+            self._adim_ekle({
+                "tip": "gorunca_git", "resim": yol,
+                "mod": ayar["mod"], "hedef": ayar["hedef"],
+            })
         else:
             self._adim_ekle({
                 "tip": "butona_tikla", "resim": yol,
                 "tiklama": ayar["tiklama"], "zaman_asimi": ayar["zaman_asimi"],
                 "bulunamazsa": ayar["bulunamazsa"], "guven": ayar["guven"],
                 "kaydir_x": ayar["kaydir_x"], "kaydir_y": ayar["kaydir_y"],
+                "hepsi": ayar["hepsi"],
             })
         self.durum(f"'{ayar['ad']}' tarife eklendi.", YESIL)
         self.log(f"Adım eklendi: {ayar['ad']}")
@@ -856,6 +1193,46 @@ class ButonBotu:
             self.durum("Konum adımı eklendi.", YESIL)
         else:
             self.durum("Vazgeçildi.")
+
+    def renk_adimi(self):
+        self.durum("Fareyi rengin olduğu noktaya götür — 3 sn sonra renk alınacak!", TURUNCU)
+        self.kok.after(3000, self._renk_al)
+
+    def _renk_al(self):
+        x, y = pyautogui.position()
+        try:
+            renk = list(pyautogui.screenshot().getpixel((x, y))[:3])
+        except Exception:
+            renk = [255, 255, 255]
+        sonuc = RenkDiyalog(self.kok, x, y, renk).sonuc
+        if sonuc:
+            self._adim_ekle({"tip": "renk_bekle", **sonuc})
+            self.durum("Renk adımı eklendi.", YESIL)
+        else:
+            self.durum("Vazgeçildi.")
+
+    def don_adimi(self):
+        sonuc = DonDiyalog(self.kok, len(self.adimlar)).sonuc
+        if sonuc:
+            self._adim_ekle({"tip": "don", **sonuc})
+
+    def pencere_adimi(self):
+        sonuc = PencereDiyalog(self.kok).sonuc
+        if sonuc:
+            self._adim_ekle({"tip": "pencere_getir", **sonuc})
+
+    def ac_adimi(self):
+        sonuc = AcDiyalog(self.kok).sonuc
+        if sonuc:
+            self._adim_ekle({"tip": "ac", **sonuc})
+
+    def pano_adimi(self):
+        sonuc = PanoDiyalog(self.kok).sonuc
+        if sonuc:
+            self._adim_ekle({"tip": "pano", **sonuc})
+
+    def ekran_adimi(self):
+        self._adim_ekle({"tip": "ekran_goruntusu"})
 
     def bekle_adimi(self):
         sonuc = BekleDiyalog(self.kok).sonuc
@@ -902,23 +1279,17 @@ class ButonBotu:
 
         if tip == "butona_tikla":
             ad = os.path.splitext(os.path.basename(adim["resim"]))[0]
-            ilk = {**adim, "ad": ad}
             sonuc = ButonAyarDiyalog(self.kok, ad, self.ayarlar["guven"],
-                                     resim_yolu=adim["resim"], ilk=ilk).sonuc
+                                     resim_yolu=adim["resim"],
+                                     ilk={**adim, "ad": ad}).sonuc
             if sonuc:
-                yol = adim["resim"]
-                if sonuc["ad"] != ad:
-                    yeni_yol = os.path.join(BUTON_KLASORU, f"{sonuc['ad']}.png")
-                    try:
-                        os.rename(yol, yeni_yol)
-                        yol = yeni_yol
-                    except OSError:
-                        pass
+                yol = self._resmi_adlandir(adim["resim"], ad, sonuc["ad"])
                 self._adim_ekle({
                     "tip": "butona_tikla", "resim": yol,
                     "tiklama": sonuc["tiklama"], "zaman_asimi": sonuc["zaman_asimi"],
                     "bulunamazsa": sonuc["bulunamazsa"], "guven": sonuc["guven"],
                     "kaydir_x": sonuc["kaydir_x"], "kaydir_y": sonuc["kaydir_y"],
+                    "hepsi": sonuc["hepsi"],
                 })
                 return
         elif tip == "buton_bekle":
@@ -929,42 +1300,47 @@ class ButonBotu:
                                  "mod": sonuc["mod"],
                                  "zaman_asimi": sonuc["zaman_asimi"]})
                 return
-        elif tip == "tikla_koordinat":
-            sonuc = KonumDiyalog(self.kok, adim["x"], adim["y"], ilk=adim).sonuc
+        elif tip == "gorunca_git":
+            ad = os.path.splitext(os.path.basename(adim["resim"]))[0]
+            sonuc = GorunceGitDiyalog(self.kok, ad, len(self.adimlar),
+                                      ilk={**adim, "ad": ad}).sonuc
             if sonuc:
-                self._adim_ekle({"tip": "tikla_koordinat", **sonuc})
+                self._adim_ekle({"tip": "gorunca_git", "resim": adim["resim"],
+                                 "mod": sonuc["mod"], "hedef": sonuc["hedef"]})
                 return
-        elif tip == "bekle":
-            sonuc = BekleDiyalog(self.kok, ilk=adim).sonuc
-            if sonuc:
-                self._adim_ekle({"tip": "bekle", **sonuc})
-                return
-        elif tip == "rastgele_bekle":
-            sonuc = RastgeleBekleDiyalog(self.kok, ilk=adim).sonuc
-            if sonuc:
-                self._adim_ekle({"tip": "rastgele_bekle", **sonuc})
-                return
-        elif tip == "yazi":
-            sonuc = YaziDiyalog(self.kok, ilk=adim).sonuc
-            if sonuc:
-                self._adim_ekle({"tip": "yazi", **sonuc})
-                return
-        elif tip == "tus":
-            sonuc = TusDiyalog(self.kok, ilk=adim).sonuc
-            if sonuc:
-                self._adim_ekle({"tip": "tus", **sonuc})
-                return
-        elif tip == "kisayol":
-            sonuc = KisayolDiyalog(self.kok, ilk=adim).sonuc
-            if sonuc:
-                self._adim_ekle({"tip": "kisayol", **sonuc})
-                return
-        elif tip == "kaydir":
-            sonuc = KaydirDiyalog(self.kok, ilk=adim).sonuc
-            if sonuc:
-                self._adim_ekle({"tip": "kaydir", **sonuc})
-                return
+        else:
+            diyaloglar = {
+                "don": lambda: DonDiyalog(self.kok, len(self.adimlar), ilk=adim),
+                "tikla_koordinat": lambda: KonumDiyalog(self.kok, adim["x"], adim["y"], ilk=adim),
+                "renk_bekle": lambda: RenkDiyalog(self.kok, adim["x"], adim["y"],
+                                                  adim["renk"], ilk=adim),
+                "bekle": lambda: BekleDiyalog(self.kok, ilk=adim),
+                "rastgele_bekle": lambda: RastgeleBekleDiyalog(self.kok, ilk=adim),
+                "yazi": lambda: YaziDiyalog(self.kok, ilk=adim),
+                "pano": lambda: PanoDiyalog(self.kok, ilk=adim),
+                "tus": lambda: TusDiyalog(self.kok, ilk=adim),
+                "kisayol": lambda: KisayolDiyalog(self.kok, ilk=adim),
+                "kaydir": lambda: KaydirDiyalog(self.kok, ilk=adim),
+                "pencere_getir": lambda: PencereDiyalog(self.kok, ilk=adim),
+                "ac": lambda: AcDiyalog(self.kok, ilk=adim),
+            }
+            yapici = diyaloglar.get(tip)
+            if yapici:
+                sonuc = yapici().sonuc
+                if sonuc:
+                    self._adim_ekle({"tip": tip, **sonuc})
+                    return
         self._duzenlenen = None
+
+    def _resmi_adlandir(self, yol, eski_ad, yeni_ad):
+        if yeni_ad == eski_ad:
+            return yol
+        yeni_yol = os.path.join(BUTON_KLASORU, f"{yeni_ad}.png")
+        try:
+            os.rename(yol, yeni_yol)
+            return yeni_yol
+        except OSError:
+            return yol
 
     def kopyala(self):
         i = self._secili()
@@ -1059,6 +1435,43 @@ class ButonBotu:
             self.durum(self._hazir_metni())
             self.log("Ayarlar kaydedildi.")
 
+    # ----------------------------------------------------------- zamanlama
+    def zamanla(self):
+        ilk = dict(self.zamanlama) if self.zamanlama else {}
+        sonuc = ZamanlamaDiyalog(self.kok, ilk=ilk).sonuc
+        if sonuc is None:
+            return
+        if sonuc["mod"] == "kapali":
+            self.zamanlama = None
+            self.durum(self._hazir_metni())
+            self.log("Zamanlama kapatıldı.")
+            return
+        if sonuc["mod"] == "saat":
+            s, d = map(int, sonuc["saat"].split(":"))
+            simdi = datetime.datetime.now()
+            hedef = simdi.replace(hour=s, minute=d, second=0, microsecond=0)
+            if hedef <= simdi:
+                hedef += datetime.timedelta(days=1)
+            sonuc["sonraki"] = hedef.timestamp()
+            self.log(f"Zamanlama: her gün {sonuc['saat']} — ilk çalıştırma "
+                     f"{hedef.strftime('%d.%m %H:%M')}.")
+        else:
+            sonuc["sonraki"] = time.time()
+            self.log(f"Zamanlama: her {sonuc['dakika']} dakikada bir (ilki hemen).")
+        self.zamanlama = sonuc
+        self.durum(self._hazir_metni())
+
+    def _zaman_kontrol(self):
+        if self.zamanlama and not self.mesgul and time.time() >= self.zamanlama["sonraki"]:
+            if self.zamanlama["mod"] == "saat":
+                self.zamanlama["sonraki"] += 86400
+            else:
+                self.zamanlama["sonraki"] = time.time() + self.zamanlama["dakika"] * 60
+            if self.adimlar:
+                self.log("⏰ Zamanlanmış çalıştırma başlıyor.")
+                self.calistir()
+        self.kok.after(2000, self._zaman_kontrol)
+
     # -------------------------------------------------- global kısayollar
     def _global_kisayollar(self):
         if not pynput_klavye:
@@ -1132,6 +1545,8 @@ class ButonBotu:
         self.durdur_buton.config(state="disabled")
         self.durum(mesaj, YESIL if basarili else KIRMIZI)
         self.log(mesaj)
+        if self.ayarlar.get("bitis_sesi") and "Durduruldu" not in mesaj:
+            threading.Thread(target=bip, daemon=True).start()
         if not basarili and "bulunamadı" in mesaj:
             messagebox.showwarning("Buton bulunamadı", mesaj)
 
