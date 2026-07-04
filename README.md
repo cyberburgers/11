@@ -9,16 +9,25 @@ sonra istediğin kadar tekrar aynen oynatır.
    - Kurulum ekranında **"Add Python to PATH"** kutusunu mutlaka işaretle!
 2. Bu klasördeki **`kur.bat`** dosyasına çift tıkla (kütüphaneyi kurar, bir kez yeterli).
 
-## Kullanım
+## Kullanım (Arayüz / pencere)
 
-1. **`baslat.bat`** dosyasına çift tıkla.
-2. Menüden **1** seç (Yeni makro kaydet).
-3. **F9**'a bas → kayıt başlar. Şimdi normal işini yap: tıkla, yaz, kaydır...
-4. Bitince tekrar **F9**'a bas → kayıt biter, makroya bir isim ver.
-5. Menüden **2** seç (Makro oynat), makroyu seç:
-   - **Kaç kez tekrar?** → sayı gir, ya da `0` yaz = sen durdurana kadar sonsuz döngü.
-   - **Hız?** → `1` normal, `2` iki kat hızlı, `0.5` yarı hızda.
-6. Oynatma sırasında durdurmak için **ESC**'ye bas.
+1. **`baslat.bat`** dosyasına çift tıkla → küçük bir pencere açılır.
+2. **⏺ Yeni Kayıt Başlat** butonuna bas. Pencere küçülür, normal işini yap:
+   tıkla, yaz, kaydır... Bitince klavyeden **F9**'a bas.
+3. Açılan kutuya makroya bir isim ver → listede belirir.
+4. Listeden makroyu seç, **Tekrar** ve **Hız** ayarla:
+   - **Tekrar:** `1` bir kez, herhangi bir sayı, ya da `0` = sen durdurana kadar sonsuz.
+   - **Hız:** `1` normal, `2` iki kat hızlı, `0.5` yarı hızda.
+5. **▶ Oynat** butonuna bas (3 saniye sonra başlar).
+6. Durdurmak için **⏹ Durdur** butonu ya da klavyeden **ESC**.
+
+> Not: Arayüz için ekstra bir şey kurmana gerek yok — `tkinter`, Windows'ta
+> python.org'dan kurulan standart Python ile birlikte gelir.
+
+### Konsol (pencere olmadan) kullanmak istersen
+
+**`baslat-konsol.bat`** dosyasına çift tıkla → metin menülü sürüm açılır
+(aynı kayıt/oynatma özellikleri).
 
 ## Kısayollar
 

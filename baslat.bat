@@ -1,4 +1,4 @@
 @echo off
 chcp 65001 >nul
-python bot.py
-pause
+python arayuz.py
+if errorlevel 1 pause
