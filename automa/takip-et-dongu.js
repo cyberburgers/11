@@ -50,7 +50,17 @@ function kaydiriciBul() {
 function satirlar() {
   const d = dialogBul();
   if (!d) return [];
-  return [...d.querySelectorAll('a[href^="/"]')];
+  return [...d.querySelectorAll('a[href]')];
+}
+
+// Modal acilir acilmaz icerigi bos oluyor; isimler yarim-bir saniye
+// sonra geliyor. Yuklenmeden devam edersek listeyi bos sanip cikiyoruz.
+async function listeyiBekle(saniye) {
+  for (let i = 0; i < saniye * 2; i++) {
+    if (satirlar().length > 0) return true;
+    await uyu(500);
+  }
+  return false;
 }
 
 function takipButonlari() {
@@ -68,7 +78,12 @@ function takipButonlari() {
     automaNextBlock({ hata: 'pencere yok' });
     return;
   }
-  console.log('Pencere bulundu. Yuklu kisi sayisi: ' + satirlar().length);
+  if (!(await listeyiBekle(20))) {
+    console.warn('20 saniyede liste yuklenmedi.');
+    automaNextBlock({ hata: 'liste yuklenmedi' });
+    return;
+  }
+  console.log('Liste yuklendi. Baslangic link sayisi: ' + satirlar().length);
 
   let sayac = 0;
   let bosTur = 0;
@@ -79,8 +94,11 @@ function takipButonlari() {
     if (butonlar.length === 0) {
       const liste = satirlar();
       if (liste.length === 0) {
-        console.warn('Listede kimse gorunmuyor.');
-        break;
+        // Vazgecme — liste gecici olarak bosalmis olabilir, bekleyip tekrar bak.
+        console.log('Liste su an bos, bekleniyor...');
+        bosTur++;
+        await uyu(2000);
+        continue;
       }
       const oncekiSayi = liste.length;
       // Iki yontemi birden uygula: once konteyneri dibe it, sonra son
