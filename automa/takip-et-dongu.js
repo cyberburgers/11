@@ -11,12 +11,18 @@
  */
 
 // ================= AYARLAR =================
-const HEDEF       = 15;   // kac kisi takip edilecek
-const BEKLE_MIN   = 4000; // iki tiklama arasi en az (ms)
-const BEKLE_MAX   = 9000; // iki tiklama arasi en fazla (ms)
+const HEDEF       = 15;   // bu oturumda kac kisi takip edilecek
+const BEKLE_MIN   = 6000; // iki tiklama arasi en az (ms)
+const BEKLE_MAX   = 20000;// iki tiklama arasi en fazla (ms)
 const MAX_BOS_TUR = 40;   // ust uste kac bos turdan sonra dursun
 const ADIM_PIKSEL = 300;  // her adimda kac piksel insin
 const ADIM_SAYISI = 6;    // bir turda kac adim atilsin
+
+// --- insani davranis ---
+const ATLAMA_ORANI  = 0.25;         // bu oranla birini hic takip etmeden atla
+const MOLA_ARALIGI  = [3, 6];       // kac takipte bir mola verilsin
+const MOLA_SURESI   = [45000, 120000]; // mola uzunlugu (ms)
+const UZUN_DURAKSAMA = 0.15;        // bu oranla arada ekstra uzun duraklama
 // ===========================================
 
 const uyu     = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -24,6 +30,17 @@ const rasgele = (a, b) => Math.floor(Math.random() * (b - a)) + a;
 
 const BASLANGIC = Date.now();
 const gecenSn   = () => Math.round((Date.now() - BASLANGIC) / 1000) + 'sn';
+
+// Duz rastgele araliktansa ortasi yogun bir dagilim insan temposuna
+// daha yakin: cogu bekleme ortalamaya toplanir, arada uzun olan cikar.
+function insaniSure(min, max) {
+  const ort = (Math.random() + Math.random() + Math.random()) / 3;
+  let ms = min + ort * (max - min);
+  if (Math.random() < UZUN_DURAKSAMA) ms += rasgele(8000, 25000);
+  return Math.round(ms);
+}
+
+const atlananlar = new WeakSet();
 
 function dialogBul() {
   const hepsi = [...document.querySelectorAll('div[role="dialog"]')];
@@ -111,6 +128,7 @@ async function listeyiBekle(saniye) {
 
   let sayac = 0;
   let bosTur = 0;
+  let sonrakiMola = rasgele(MOLA_ARALIGI[0], MOLA_ARALIGI[1] + 1);
 
   while (sayac < HEDEF && bosTur < MAX_BOS_TUR) {
     const butonlar = takipButonlari();
@@ -139,13 +157,31 @@ async function listeyiBekle(saniye) {
     }
 
     bosTur = 0;
-    const btn = butonlar[0];
+    // Hep listenin en ustundekini secmek makinemsi duruyor; gorunenler
+    // arasindan rastgele birini sec ve bazilarini hic takip etmeden gec.
+    const btn = butonlar[rasgele(0, Math.min(butonlar.length, 3))];
+
+    if (Math.random() < ATLAMA_ORANI) {
+      atlananlar.add(btn);
+      console.log('[' + gecenSn() + '] Bu kisi atlandi');
+      await uyu(insaniSure(2000, 6000));
+      continue;
+    }
+
     btn.scrollIntoView({ block: 'center' });
-    await uyu(600);
+    await uyu(insaniSure(800, 2500)); // once "bakiyormus" gibi dur
     btn.click();
     sayac++;
     console.log('[' + gecenSn() + '] Takip edildi: ' + sayac + '/' + HEDEF);
-    await uyu(rasgele(BEKLE_MIN, BEKLE_MAX));
+
+    if (sayac >= sonrakiMola && sayac < HEDEF) {
+      const sure = rasgele(MOLA_SURESI[0], MOLA_SURESI[1]);
+      console.log('[' + gecenSn() + '] Mola: ' + Math.round(sure / 1000) + ' saniye');
+      await uyu(sure);
+      sonrakiMola = sayac + rasgele(MOLA_ARALIGI[0], MOLA_ARALIGI[1] + 1);
+    } else {
+      await uyu(insaniSure(BEKLE_MIN, BEKLE_MAX));
+    }
   }
 
   const hepsiDipte = kaydiricilar().every(dipteMi);
@@ -160,6 +196,7 @@ function takipButonlari() {
   const d = dialogBul();
   if (!d) return [];
   return [...d.querySelectorAll('button, div[role="button"]')].filter((b) => {
+    if (atlananlar.has(b)) return false;
     const t = (b.innerText || '').trim().toLocaleLowerCase('tr');
     return t === 'takip et' || t === 'follow' || t === 'geri takip et' || t === 'follow back';
   });
