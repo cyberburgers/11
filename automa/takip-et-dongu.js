@@ -23,9 +23,24 @@ const MAX_BOS_TUR = 15;   // ust uste kac bos kaydirmadan sonra dursun
 const uyu     = (ms) => new Promise((r) => setTimeout(r, ms));
 const rasgele = (a, b) => Math.floor(Math.random() * (b - a)) + a;
 
+// Sayfada birden fazla role="dialog" bulunabiliyor (gizli olanlar dahil).
+// En cok profil linki icereni secmek, takipci penceresini garanti eder.
 function dialogBul() {
-  const hepsi = document.querySelectorAll('div[role="dialog"]');
-  return hepsi[hepsi.length - 1] || null;
+  const hepsi = [...document.querySelectorAll('div[role="dialog"]')];
+  if (!hepsi.length) return null;
+  return hepsi
+    .map((d) => [d, d.querySelectorAll('a[href^="/"]').length])
+    .sort((a, b) => b[1] - a[1])[0][0];
+}
+
+// Modal icindeki kaydirilabilir kutu (en buyuk tasma hangisindeyse o).
+function kaydiriciBul() {
+  const d = dialogBul();
+  if (!d) return null;
+  const adaylar = [...d.querySelectorAll('div')]
+    .filter((e) => e.scrollHeight > e.clientHeight + 50)
+    .sort((a, b) => b.scrollHeight - a.scrollHeight);
+  return adaylar[0] || null;
 }
 
 // Modal icindeki kisi satirlari (profil linkleri). Kaydirilabilir
@@ -68,8 +83,12 @@ function takipButonlari() {
         break;
       }
       const oncekiSayi = liste.length;
-      liste[liste.length - 1].scrollIntoView({ block: 'center' });
-      console.log('Kaydiriliyor... (' + oncekiSayi + ' kisi yuklu)');
+      // Iki yontemi birden uygula: once konteyneri dibe it, sonra son
+      // satiri gorunume getir. Biri tutmazsa digeri tutar.
+      const k = kaydiriciBul();
+      if (k) k.scrollTop = k.scrollHeight;
+      liste[liste.length - 1].scrollIntoView({ block: 'end' });
+      console.log('Kaydiriliyor... (' + oncekiSayi + ' link yuklu, kaydirici: ' + (k ? 'var' : 'YOK') + ')');
       await uyu(3000);
       if (satirlar().length === oncekiSayi) bosTur++;
       else bosTur = 0;
