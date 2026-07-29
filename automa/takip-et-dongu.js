@@ -1,45 +1,45 @@
 /*
- * Automa "JavaScript Code" bloguna yapistirilacak kod.
- * Akistaki yeri: ... -> Click element (Takipciler) -> Delay 3000 -> [BU BLOK]
+ * Automa "JavaScript Kodu" bloguna yapistirilacak metin.
  *
- * Blok ayarlari:
- *   - Timeout (ms): 600000   (varsayilan 20000 cok kisa, dongu yarida kesilir)
- *   - "Run in the main/active tab" isaretli kalsin
+ * Akistaki yeri: ... -> Ogeye tikla (takipci listesini acan) -> [BU BLOK]
+ * Baska bloga gerek yok. Kosullar / Oge Kaydir / Gorevi Yinele bloklarini sil.
  *
- * Ne yapar: takipci modalinde "Takip et" butonlarini tek tek tiklar,
- * buton kalmayinca modalin ic kaydiricisini asagi iter, yeni isimler
- * yuklenene kadar bekler. HEDEF sayisina ulasinca sonraki bloga gecer.
+ * Blok ayari:
+ *   Zaman asimi (timeout) = 600000
+ *
+ * Ne yapar:
+ *   - Ekranda "Takip et" butonu varsa tiklar
+ *   - Yoksa listeyi asagi kaydirir, yeni isimlerin yuklenmesini bekler
+ *   - HEDEF sayisina ulasinca durur
  */
 
-// ---------- AYARLAR ----------
-const HEDEF      = 15;    // kac kisi takip edilecek
-const BEKLE_MIN  = 4000;  // iki tiklama arasi en az ms
-const BEKLE_MAX  = 9000;  // iki tiklama arasi en fazla ms
-const MAX_BOS_TUR = 15;   // ust uste kac kez bos kaydirma sonrasi pes edilsin
-// -----------------------------
+// ================= AYARLAR =================
+const HEDEF       = 15;   // kac kisi takip edilecek
+const BEKLE_MIN   = 4000; // iki tiklama arasi en az (ms)
+const BEKLE_MAX   = 9000; // iki tiklama arasi en fazla (ms)
+const MAX_BOS_TUR = 15;   // ust uste kac bos kaydirmadan sonra dursun
+// ===========================================
 
 const uyu     = (ms) => new Promise((r) => setTimeout(r, ms));
 const rasgele = (a, b) => Math.floor(Math.random() * (b - a)) + a;
 
 function dialogBul() {
   const hepsi = document.querySelectorAll('div[role="dialog"]');
-  return hepsi[hepsi.length - 1] || null; // en ustteki modal
+  return hepsi[hepsi.length - 1] || null;
 }
 
-// Modalin gercek kaydirilabilir div'i (sanal liste konteyneri)
 function kaydiriciBul() {
   const d = dialogBul();
   if (!d) return null;
   let enIyi = null;
   for (const el of d.querySelectorAll('div')) {
-    if (el.scrollHeight > el.clientHeight + 80) {
+    if (el.scrollHeight > el.clientHeight + 50) {
       if (!enIyi || el.scrollHeight > enIyi.scrollHeight) enIyi = el;
     }
   }
   return enIyi;
 }
 
-// "Takip et" / "Follow" butonlari. "Takiptesin" ve "Takip isteği gönderildi" haric.
 function takipButonlari() {
   const d = dialogBul();
   if (!d) return [];
@@ -57,16 +57,15 @@ function takipButonlari() {
     const butonlar = takipButonlari();
 
     if (butonlar.length === 0) {
-      // Ekranda takip edilecek kimse yok -> asagi kaydir, yeni isimleri bekle
-      const kaydirici = kaydiriciBul();
-      if (!kaydirici) {
-        console.warn('Modal kaydiricisi bulunamadi, modal kapanmis olabilir.');
+      const k = kaydiriciBul();
+      if (!k) {
+        console.warn('Takipci penceresi bulunamadi.');
         break;
       }
-      const oncekiYukseklik = kaydirici.scrollHeight;
-      kaydirici.scrollTop = kaydirici.scrollHeight;
+      const onceki = k.scrollTop;
+      k.scrollTop = k.scrollHeight;
       await uyu(2500);
-      if (kaydirici.scrollHeight === oncekiYukseklik) bosTur++;
+      if (k.scrollTop === onceki) bosTur++;
       else bosTur = 0;
       continue;
     }
@@ -77,11 +76,11 @@ function takipButonlari() {
     await uyu(600);
     btn.click();
     sayac++;
-    console.log(`[${sayac}/${HEDEF}] takip edildi`);
+    console.log('Takip edildi: ' + sayac + '/' + HEDEF);
 
     await uyu(rasgele(BEKLE_MIN, BEKLE_MAX));
   }
 
-  console.log(`Bitti. Toplam takip: ${sayac}`);
+  console.log('Bitti. Toplam takip: ' + sayac);
   automaNextBlock({ takipEdilen: sayac });
 })();
