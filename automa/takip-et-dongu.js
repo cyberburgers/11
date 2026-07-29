@@ -17,11 +17,16 @@
 const HEDEF       = 15;   // kac kisi takip edilecek
 const BEKLE_MIN   = 4000; // iki tiklama arasi en az (ms)
 const BEKLE_MAX   = 9000; // iki tiklama arasi en fazla (ms)
-const MAX_BOS_TUR = 30;   // ust uste kac bos kaydirmadan sonra dursun
+const MAX_BOS_TUR = 40;   // ust uste kac bos kaydirmadan sonra dursun
 // ===========================================
 
 const uyu     = (ms) => new Promise((r) => setTimeout(r, ms));
 const rasgele = (a, b) => Math.floor(Math.random() * (b - a)) + a;
+
+// Blok zaman asimina takilip oldurulduyse son satirdaki saniye
+// zaman asimi degerine denk gelir; kendi kendine bittiyse gelmez.
+const BASLANGIC = Date.now();
+const gecenSn   = () => Math.round((Date.now() - BASLANGIC) / 1000) + 'sn';
 
 // Sayfada birden fazla role="dialog" bulunabiliyor (gizli olanlar dahil).
 // En cok profil linki icereni secmek, takipci penceresini garanti eder.
@@ -114,7 +119,7 @@ function takipButonlari() {
         k.scrollTop = k.scrollHeight;
       }
       liste[liste.length - 1].scrollIntoView({ block: 'end' });
-      console.log('Kaydiriliyor... (' + oncekiSayi + ' link, bos tur: ' + bosTur + ')');
+      console.log('[' + gecenSn() + '] Kaydiriliyor... (' + oncekiSayi + ' link, bos tur: ' + bosTur + ')');
 
       // Yukleme bazen gec geliyor: 6 saniyeye kadar artis bekle.
       let arttiMi = false;
@@ -132,7 +137,7 @@ function takipButonlari() {
     await uyu(600);
     btn.click();
     sayac++;
-    console.log('Takip edildi: ' + sayac + '/' + HEDEF);
+    console.log('[' + gecenSn() + '] Takip edildi: ' + sayac + '/' + HEDEF);
 
     await uyu(rasgele(BEKLE_MIN, BEKLE_MAX));
   }
@@ -140,6 +145,6 @@ function takipButonlari() {
   const sebep = sayac >= HEDEF ? 'hedefe ulasildi'
               : bosTur >= MAX_BOS_TUR ? 'liste sonuna gelindi veya Instagram yukleme yapmiyor'
               : 'bilinmiyor';
-  console.log('Bitti. Toplam takip: ' + sayac + ' | Sebep: ' + sebep);
+  console.log('[' + gecenSn() + '] Bitti. Toplam takip: ' + sayac + ' | Sebep: ' + sebep);
   automaNextBlock({ takipEdilen: sayac, sebep: sebep });
 })();
