@@ -18,6 +18,8 @@ const HEDEF       = 15;   // kac kisi takip edilecek
 const BEKLE_MIN   = 4000; // iki tiklama arasi en az (ms)
 const BEKLE_MAX   = 9000; // iki tiklama arasi en fazla (ms)
 const MAX_BOS_TUR = 40;   // ust uste kac bos kaydirmadan sonra dursun
+const ADIM_PIKSEL = 300;  // her kaydirmada kac piksel insin (kucult = daha yumusak)
+const ADIM_SAYISI = 5;    // bir turda kac adim atilsin
 // ===========================================
 
 const uyu     = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -106,20 +108,20 @@ function takipButonlari() {
         continue;
       }
       const oncekiSayi = liste.length;
-      // Iki yontemi birden uygula: once konteyneri dibe it, sonra son
-      // satiri gorunume getir. Biri tutmazsa digeri tutar.
       const k = kaydiriciBul();
       if (k) {
-        // Dibe yapisik kalinca Instagram yeni sayfa istemiyor; once biraz
-        // yukari cekip tekrar dibe itmek yuklemeyi yeniden tetikliyor.
-        if (bosTur > 0) {
-          k.scrollTop = Math.max(0, k.scrollTop - 400);
-          await uyu(400);
+        // Tek hamlede dibe atlamak Instagram'in yukleme tetikleyicisini
+        // atlatiyor. Kucuk adimlarla inmek daha cok scroll olayi uretiyor.
+        for (let i = 0; i < ADIM_SAYISI; i++) {
+          k.scrollTop += ADIM_PIKSEL;
+          k.dispatchEvent(new Event('scroll', { bubbles: true }));
+          await uyu(300);
+          if (satirlar().length > oncekiSayi) break;
         }
-        k.scrollTop = k.scrollHeight;
+      } else {
+        liste[liste.length - 1].scrollIntoView({ block: 'end' });
       }
-      liste[liste.length - 1].scrollIntoView({ block: 'end' });
-      console.log('[' + gecenSn() + '] Kaydiriliyor... (' + oncekiSayi + ' link, bos tur: ' + bosTur + ')');
+      console.log('[' + gecenSn() + '] Kaydiriliyor... (' + oncekiSayi + ' link, konum: ' + (k ? k.scrollTop + '/' + k.scrollHeight : 'kaydirici yok') + ', bos tur: ' + bosTur + ')');
 
       // Yukleme bazen gec geliyor: 6 saniyeye kadar artis bekle.
       let arttiMi = false;
