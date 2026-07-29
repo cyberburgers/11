@@ -17,7 +17,7 @@
 const HEDEF       = 15;   // kac kisi takip edilecek
 const BEKLE_MIN   = 4000; // iki tiklama arasi en az (ms)
 const BEKLE_MAX   = 9000; // iki tiklama arasi en fazla (ms)
-const MAX_BOS_TUR = 15;   // ust uste kac bos kaydirmadan sonra dursun
+const MAX_BOS_TUR = 30;   // ust uste kac bos kaydirmadan sonra dursun
 // ===========================================
 
 const uyu     = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -104,12 +104,25 @@ function takipButonlari() {
       // Iki yontemi birden uygula: once konteyneri dibe it, sonra son
       // satiri gorunume getir. Biri tutmazsa digeri tutar.
       const k = kaydiriciBul();
-      if (k) k.scrollTop = k.scrollHeight;
+      if (k) {
+        // Dibe yapisik kalinca Instagram yeni sayfa istemiyor; once biraz
+        // yukari cekip tekrar dibe itmek yuklemeyi yeniden tetikliyor.
+        if (bosTur > 0) {
+          k.scrollTop = Math.max(0, k.scrollTop - 400);
+          await uyu(400);
+        }
+        k.scrollTop = k.scrollHeight;
+      }
       liste[liste.length - 1].scrollIntoView({ block: 'end' });
-      console.log('Kaydiriliyor... (' + oncekiSayi + ' link yuklu, kaydirici: ' + (k ? 'var' : 'YOK') + ')');
-      await uyu(3000);
-      if (satirlar().length === oncekiSayi) bosTur++;
-      else bosTur = 0;
+      console.log('Kaydiriliyor... (' + oncekiSayi + ' link, bos tur: ' + bosTur + ')');
+
+      // Yukleme bazen gec geliyor: 6 saniyeye kadar artis bekle.
+      let arttiMi = false;
+      for (let i = 0; i < 12; i++) {
+        await uyu(500);
+        if (satirlar().length > oncekiSayi) { arttiMi = true; break; }
+      }
+      bosTur = arttiMi ? 0 : bosTur + 1;
       continue;
     }
 
@@ -124,6 +137,9 @@ function takipButonlari() {
     await uyu(rasgele(BEKLE_MIN, BEKLE_MAX));
   }
 
-  console.log('Bitti. Toplam takip: ' + sayac);
-  automaNextBlock({ takipEdilen: sayac });
+  const sebep = sayac >= HEDEF ? 'hedefe ulasildi'
+              : bosTur >= MAX_BOS_TUR ? 'liste sonuna gelindi veya Instagram yukleme yapmiyor'
+              : 'bilinmiyor';
+  console.log('Bitti. Toplam takip: ' + sayac + ' | Sebep: ' + sebep);
+  automaNextBlock({ takipEdilen: sayac, sebep: sebep });
 })();
