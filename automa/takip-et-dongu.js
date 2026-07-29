@@ -28,16 +28,14 @@ function dialogBul() {
   return hepsi[hepsi.length - 1] || null;
 }
 
-function kaydiriciBul() {
+// Modal icindeki kisi satirlari (profil linkleri). Kaydirilabilir
+// konteyneri aramak yerine son satiri gorunume getiriyoruz —
+// scrollIntoView konteyner bilgisi gerektirmez ve sanal listede
+// Instagram'in yeni sayfa yuklemesini tetikler.
+function satirlar() {
   const d = dialogBul();
-  if (!d) return null;
-  let enIyi = null;
-  for (const el of d.querySelectorAll('div')) {
-    if (el.scrollHeight > el.clientHeight + 50) {
-      if (!enIyi || el.scrollHeight > enIyi.scrollHeight) enIyi = el;
-    }
-  }
-  return enIyi;
+  if (!d) return [];
+  return [...d.querySelectorAll('a[href^="/"]')];
 }
 
 function takipButonlari() {
@@ -50,6 +48,13 @@ function takipButonlari() {
 }
 
 (async () => {
+  if (!dialogBul()) {
+    console.warn('Takipci penceresi acik degil!');
+    automaNextBlock({ hata: 'pencere yok' });
+    return;
+  }
+  console.log('Pencere bulundu. Yuklu kisi sayisi: ' + satirlar().length);
+
   let sayac = 0;
   let bosTur = 0;
 
@@ -57,15 +62,16 @@ function takipButonlari() {
     const butonlar = takipButonlari();
 
     if (butonlar.length === 0) {
-      const k = kaydiriciBul();
-      if (!k) {
-        console.warn('Takipci penceresi bulunamadi.');
+      const liste = satirlar();
+      if (liste.length === 0) {
+        console.warn('Listede kimse gorunmuyor.');
         break;
       }
-      const onceki = k.scrollTop;
-      k.scrollTop = k.scrollHeight;
-      await uyu(2500);
-      if (k.scrollTop === onceki) bosTur++;
+      const oncekiSayi = liste.length;
+      liste[liste.length - 1].scrollIntoView({ block: 'center' });
+      console.log('Kaydiriliyor... (' + oncekiSayi + ' kisi yuklu)');
+      await uyu(3000);
+      if (satirlar().length === oncekiSayi) bosTur++;
       else bosTur = 0;
       continue;
     }
