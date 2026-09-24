@@ -901,85 +901,12 @@ h1 {
   font-variant-numeric: tabular-nums;
 }
 
-/* ---------- Hakkımızda ---------- */
-
-.hakkinda {
-  display: grid;
-  grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr);
-  gap: clamp(40px, 7vw, 110px);
-}
-@media (max-width: 900px) {
-  .hakkinda { grid-template-columns: minmax(0, 1fr); }
-}
-
-.yil {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-top: 40px;
-}
-.yil-sayi {
-  font-family: var(--font-baslik);
-  font-size: clamp(76px, 9vw, 116px);
-  line-height: 0.9;
-  letter-spacing: -0.03em;
-  color: var(--vurgu-buyuk);
-  font-variant-numeric: lining-nums;
-}
-.yil-yazi {
-  font-size: 14px;
-  line-height: 1.45;
-  color: var(--yazi-2);
-}
-
-.hakkinda-sag {
-  display: grid;
-  align-content: start;
-  gap: 20px;
-  max-width: 62ch;
-  padding-top: 8px;
-  color: var(--yazi-2);
-}
-.giris-paragraf {
-  font-family: var(--font-baslik);
-  font-size: clamp(21px, 2.2vw, 26px);
-  line-height: 1.45;
-  color: var(--yazi);
-}
-
-.ilkeler {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
-  margin: 20px 0 0;
-  padding-top: 28px;
-  border-top: 1px solid var(--cizgi);
-}
-@media (max-width: 640px) {
-  .ilkeler { grid-template-columns: minmax(0, 1fr); gap: 18px; }
-}
-.ilkeler dt {
-  margin-bottom: 6px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--yazi);
-}
-.ilkeler dd {
-  margin: 0;
-  font-size: 14px;
-  line-height: 1.55;
-}
-
 /* ---------- İletişim ---------- */
-
-.iletisim { padding-top: 0; }
 
 .iletisim-ic {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   gap: clamp(40px, 6vw, 88px);
-  padding-top: clamp(72px, 10vw, 128px);
-  border-top: 1px solid var(--cizgi-yumusak);
 }
 @media (max-width: 900px) {
   .iletisim-ic { grid-template-columns: minmax(0, 1fr); }

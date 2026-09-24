@@ -22,7 +22,6 @@ window.SEVILEN = {
     sehir: 'Şanlıurfa',
     konumKisa: 'Şanlıurfa · Kuyumcular Çarşısı',
     haritaArama: 'Kuyumcular Çarşısı, Eyyübiye, Şanlıurfa', // Google Haritalar'da aranacak metin
-    kurulusYili: 1998,
 
     // 0 = Pazar, 1 = Pazartesi ... 6 = Cumartesi. Kapalı gün için null yazın.
     calismaSaatleri: {

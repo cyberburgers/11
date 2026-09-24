@@ -12,7 +12,7 @@ Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üz
 
 | Dosya | Ne işe yarar |
 |---|---|
-| `index.html` | Sayfanın kendisi. Hakkımızda metni burada. |
+| `index.html` | Sayfanın kendisi. |
 | `api/ayarlar.php` | **Fiyat ayarları:** gösterilecek ürünler ve adları, kâr marjı (%), önbellek süresi. |
 | `api/fiyatlar.php` | Fiyat uç noktası. ŞUKOB'u sunucuda çağırır, sadeleştirir, önbellekte tutar. |
 | `js/ayarlar.js` | **Site ayarları:** telefon, adres, WhatsApp, Instagram, çalışma saatleri, üstte öne çıkan fiyatlar, yenileme süresi. |
@@ -33,7 +33,7 @@ Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üz
 4. Her şey tamamsa `api/ayarlar.php` içindeki `tani_acik` değerini `false` yapın.
 5. `index.html` içinde `www.example.com` yazan yeri kendi alan adınızla değiştirin (WhatsApp önizleme görseli buna bağlı).
 
-Not: GitHub Pages ya da Netlify gibi yalnızca düz HTML barındıran yerlerde PHP çalışmaz. Site açılır ama fiyatlar gelmez (sayfada "Fiyatlar şu an alınamıyor" yazar). Netlify için fiyat uç noktasının Netlify Functions'a (JavaScript) taşınması gerekir.
+Not: GitHub Pages gibi yalnızca düz HTML barındıran yerlerde PHP çalışmaz; fiyatlar gelmez. Netlify için aşağıdaki bölüme bakın.
 
 ## Fiyat ayarları (`api/ayarlar.php`)
 
@@ -72,7 +72,7 @@ Alt klasördeki bir sayfada adresi belirtin: `<script>window.FIYAT_TABLOSU = { a
 
 ## Site bilgilerini değiştirme
 
-`js/ayarlar.js` dosyasını açın. İçindeki telefon, adres, WhatsApp numarası ve Instagram adı **örnek bilgilerdir**, kendi bilgilerinizle değiştirin. Hakkımızda yazısı `index.html` içinde, `ÖRNEK METİN` notunun altındadır.
+`js/ayarlar.js` dosyasını açın. İçindeki telefon, adres, WhatsApp numarası ve Instagram adı **örnek bilgilerdir**, kendi bilgilerinizle değiştirin.
 
 ## Bilgisayarda deneme
 
@@ -93,3 +93,17 @@ Kaynak adresi `SUKOB_URL` ortam değişkeniyle değiştirilebilir. Kodu değişt
 ```
 SUKOB_URL="http://127.0.0.1:8096/api/prices/" php -S 127.0.0.1:8095
 ```
+
+## Netlify'da yayınlama
+
+Netlify PHP çalıştırmaz; fiyat uç noktasının Netlify sürümü `netlify/functions/fiyatlar.mjs` dosyasındadır ve `/api/fiyatlar.php` adresine yanıt verir (ön yüzde değişiklik gerekmez).
+
+1. Netlify'da **Add new site → Import an existing project → GitHub** ile bu depoyu seçin.
+2. **Branch:** kodun bulunduğu dal. **Base directory:** `sevilen-kuyumculuk`. Build command boş kalsın (`netlify.toml` gerisini ayarlar).
+3. **Deploy**'a basın. Sürükle-bırak (Netlify Drop) ile yüklemeyin: fonksiyonlar o yolla çalışmaz.
+4. Yayınlanınca `siteniz.netlify.app/api/tani` adresini açın:
+   - `"basarili": true` ise fiyatlar geliyor.
+   - `"cloudflare_engeli": true` ise ŞUKOB, Netlify sunucularını engelliyor demektir. Aşmaya çalışmayın; Türkiye'deki bir PHP hostinge geçin.
+5. Kurulum bitince `netlify/ayarlar.mjs` içindeki `taniAcik` değerini `false` yapın.
+
+Netlify'da ayarlar `netlify/ayarlar.mjs` dosyasındadır (ürünler, kâr marjı, önbellek süresi). Önbelleği Netlify CDN'i tutar; ŞUKOB'a en fazla `onbellekSn` saniyede bir gidilir. Son başarılı veri Netlify Blobs'ta saklanır. Ücretsiz planın aylık kullanım sınırı vardır; yoğun trafikte `onbellekSn` değerini 30'a çıkarmak çağrı sayısını üçte birine indirir.

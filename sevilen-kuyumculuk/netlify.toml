@@ -1,0 +1,15 @@
+# Netlify ayarları. GitHub'dan bağlarken "Base directory" = sevilen-kuyumculuk
+[build]
+  publish = "."
+  functions = "netlify/functions"
+  command = ""
+
+[functions]
+  node_bundler = "esbuild"
+
+# PHP dosyaları Netlify'da çalışmaz; ayar dosyası dışarıdan okunmasın
+[[redirects]]
+  from = "/api/ayarlar.php"
+  to = "/bulunamadi"
+  status = 404
+  force = true

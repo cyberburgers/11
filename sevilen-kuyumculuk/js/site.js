@@ -79,7 +79,6 @@
 
     var buYil = new Date().getFullYear();
     $('#bu-yil').textContent = buYil;
-    if (f.kurulusYili) $('#yil-sayi').textContent = buYil - f.kurulusYili;
   }
 
   /* ---------- Vitrin (üstteki öne çıkan fiyatlar) ---------- */
@@ -446,7 +445,6 @@
       openingHoursSpecification: saatler
     };
     if (f.instagram) veri.sameAs = ['https://instagram.com/' + f.instagram];
-    if (f.kurulusYili) veri.foundingDate = String(f.kurulusYili);
 
     var s = document.createElement('script');
     s.type = 'application/ld+json';

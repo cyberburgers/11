@@ -88,11 +88,11 @@
     if (typeof AYAR.ornekVeri === 'function') {
       istek = Promise.resolve({ liste: AYAR.ornekVeri(), bayat: false });
     } else {
-      var ayrac = ADRES.indexOf('?') > -1 ? '&' : '?';
       // Sunucu cevap vermezse 12 sn sonra vazgeç, sonraki turda yeniden dene
       var iptal = window.AbortController ? new AbortController() : null;
       var sure = iptal ? setTimeout(function () { iptal.abort(); }, 12000) : null;
-      istek = fetch(ADRES + ayrac + 't=' + Date.now(), { cache: 'no-store', headers: { Accept: 'application/json' }, signal: iptal ? iptal.signal : undefined })
+      // Adrese zaman damgası eklenmez: sunucu/CDN önbelleği ortak kalsın
+      istek = fetch(ADRES, { cache: 'no-store', headers: { Accept: 'application/json' }, signal: iptal ? iptal.signal : undefined })
         .then(function (r) {
           clearTimeout(sure);
           if (!r.ok) throw new Error('HTTP ' + r.status);

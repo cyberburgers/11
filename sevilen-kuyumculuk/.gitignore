@@ -1,2 +1,4 @@
 # Sunucuda oluşan fiyat önbelleği
 api/onbellek/
+node_modules/
+.netlify/

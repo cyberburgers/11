@@ -1,0 +1,9 @@
+{
+  "name": "sevilen-kuyumculuk",
+  "private": true,
+  "type": "module",
+  "description": "Netlify Functions için gereken paket. PHP hostingde gerekmez.",
+  "dependencies": {
+    "@netlify/blobs": "^11.1.1"
+  }
+}
