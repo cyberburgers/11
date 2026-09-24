@@ -14,6 +14,8 @@
    Gereken: PHP 7.4+, cURL. "api/onbellek" klasörü yazılabilir olmalı.
    ===================================================================== */
 
+// PHP uyarıları JSON çıktısını bozmasın ve sunucu yollarını göstermesin
+ini_set('display_errors', '0');
 date_default_timezone_set('Europe/Istanbul');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, max-age=0');

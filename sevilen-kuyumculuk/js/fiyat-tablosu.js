@@ -74,8 +74,12 @@
 
   /* ---------- Veri ---------- */
 
+  var istekte = false;
+
   function cek() {
     clearTimeout(zamanlayici);
+    if (istekte) return; // önceki istek sürerken ikincisini atma
+    istekte = true;
     sonIstek = Date.now();
 
     var istek;
@@ -83,8 +87,12 @@
       istek = Promise.resolve({ liste: AYAR.ornekVeri(), bayat: false });
     } else {
       var ayrac = ADRES.indexOf('?') > -1 ? '&' : '?';
-      istek = fetch(ADRES + ayrac + 't=' + Date.now(), { cache: 'no-store', headers: { Accept: 'application/json' } })
+      // Sunucu cevap vermezse 12 sn sonra vazgeç, sonraki turda yeniden dene
+      var iptal = window.AbortController ? new AbortController() : null;
+      var sure = iptal ? setTimeout(function () { iptal.abort(); }, 12000) : null;
+      istek = fetch(ADRES + ayrac + 't=' + Date.now(), { cache: 'no-store', headers: { Accept: 'application/json' }, signal: iptal ? iptal.signal : undefined })
         .then(function (r) {
+          clearTimeout(sure);
           if (!r.ok) throw new Error('HTTP ' + r.status);
           var bayat = r.headers.get('X-Fiyat-Durumu') === 'bayat';
           return r.json().then(function (liste) { return { liste: liste, bayat: bayat }; });
@@ -102,6 +110,7 @@
         olay('fiyatlar:hata', { liste: durum.liste });
       })
       .then(function () {
+        istekte = false;
         if (!document.hidden) zamanlayici = setTimeout(cek, YENILEME_MS);
       });
   }

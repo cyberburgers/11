@@ -29,8 +29,9 @@ return [
     // Satış fiyatına eklenecek kâr marjı, yüzde olarak. Örnek: 1.5 → %1,5
     'kar_marji_yuzde' => 0,
 
-    // Kaynağa en fazla kaç saniyede bir gidilsin (en az 10; önerilen 30)
-    'onbellek_sn' => 30,
+    // Kaynağa en fazla kaç saniyede bir gidilsin (en az 10). ŞUKOB'un kendi
+    // sayfası da 10 saniyede bir yeniliyor; tek ziyaretçi yükü kadardır.
+    'onbellek_sn' => 10,
 
     // Cloudflare engeli görülürse kaynak bu kadar saniye hiç denenmez
     'engel_bekleme_sn' => 600,

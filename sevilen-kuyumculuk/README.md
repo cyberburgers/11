@@ -2,11 +2,11 @@
 
 Tek sayfalık site: canlı altın, sarrafiye, döviz ve gümüş fiyatları (alış / satış), altın hesaplama aracı, hakkımızda, iletişim + harita ve WhatsApp düğmesi.
 
-- **İki tema:** Fildişi (varsayılan) ve koyu zümrüt. Ziyaretçi üst çubuktaki ay/güneş düğmesiyle değiştirir, seçimi tarayıcısında hatırlanır.
+- **İki tema:** Beyaz (varsayılan) ve koyu zümrüt. Ziyaretçi üst çubuktaki ay/güneş düğmesiyle değiştirir, seçimi tarayıcısında hatırlanır.
 - **Telefonda:** açılır menü ve "Ana ekrana ekle" ikonu var. Müşteri fiyat sayfasını uygulama gibi ekranına ekleyebilir.
 - **Paylaşım:** Site linki WhatsApp'ta paylaşılınca logolu önizleme görseli çıkar. Google için işletme bilgisi (adres, telefon, çalışma saatleri) sayfaya otomatik eklenir.
 
-Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 30 saniyede bir yenilenir. Altın, sarrafiye ve gümüş ŞUKOB listesindeki gibi kuruşsuz, döviz 2 haneyle (48,81) gösterilir.
+Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 10 saniyede bir yenilenir (ŞUKOB en fazla ~20 sn geriden takip edilir). Altın, sarrafiye ve gümüş ŞUKOB listesindeki gibi kuruşsuz, döviz 2 haneyle (48,81) gösterilir.
 
 ## Dosyalar
 
@@ -40,7 +40,7 @@ Not: GitHub Pages ya da Netlify gibi yalnızca düz HTML barındıran yerlerde P
 - **`urunler`**: Gösterilecek ürün kodları, bu sırayla. `'kod' => 'Görünen ad'`. Ad yerine `null` yazılırsa ŞUKOB'daki ad kullanılır. Satırı silen ürün sitede görünmez.
   Kodlar: `HAS, 22_ayar_bilezik, hurda, yeni_ceyrek, yeni_yarim, yeni_ziynet, eski_ceyrek, eski_yarim, eski_ziynet, cnc, sarnel, GMS, USD, EUR`
 - **`kar_marji_yuzde`**: Satış fiyatlarına eklenecek yüzde. Varsayılan `0`.
-- **`onbellek_sn`**: ŞUKOB'a en fazla kaç saniyede bir gidileceği. Varsayılan `30`, en az `10`.
+- **`onbellek_sn`**: ŞUKOB'a en fazla kaç saniyede bir gidileceği. Varsayılan `10` (en az `10`).
 - **`engel_bekleme_sn`**: Cloudflare engeli (403/429/503 ya da JSON yerine HTML) görülünce kaynağın hiç denenmeyeceği süre. Varsayılan `600` (10 dakika). Bu sürede son başarılı veri gösterilir; engel aşılmaya çalışılmaz.
 
 Ekranda kaç hane gösterileceği ve sayfanın yenilenme süresi `js/ayarlar.js` içindeki `FIYAT_TABLOSU` bölümündedir (`ondalik`, `yenilemeSaniye`). Kuruşsuz gösterilen altın ve gümüşte kuruş ŞUKOB'daki gibi kesilir, döviz yuvarlanır; hesaplama aracı da ekranda görünen fiyatı kullanır.

@@ -341,7 +341,7 @@
   /* ---------- Açık / koyu tema ---------- */
 
   var TEMA_ANAHTAR = 'sevilen-tema';
-  var TEMA_RENGI = { acik: '#F5EFE3', koyu: '#0B2A22' };
+  var TEMA_RENGI = { acik: '#FFFFFF', koyu: '#0B2A22' };
   var temaGecisZaman;
 
   function simdikiTema() {

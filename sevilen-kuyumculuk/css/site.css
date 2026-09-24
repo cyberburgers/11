@@ -1,7 +1,7 @@
 /* =====================================================================
    SEVİLEN KUYUMCULUK — STİL
    İki tema:
-     Açık (varsayılan) : fildişi zemin, zümrüt mürekkep, antik altın
+     Açık (varsayılan) : beyaz zemin, zümrüt mürekkep, antik altın
      Koyu             : koyu zümrüt zemin, fildişi yazı, altın vurgu
    Tema <html data-tema="acik|koyu"> ile seçilir; renklerin hepsi
    aşağıdaki değişkenlerden gelir.
@@ -11,11 +11,11 @@
 :root {
   color-scheme: light;
 
-  --zemin:          #F5EFE3;   /* fildişi */
-  --zemin-derin:    #EDE5D5;   /* hesaplama ve alt bilgi bandı */
-  --panel:          #FFFBF4;   /* tablolar, kartlar */
-  --panel-giris:    #FAF4E9;   /* form alanları */
-  --panel-ic:       #F6EFE2;   /* vitrin kutucukları */
+  --zemin:          #FFFFFF;   /* beyaz */
+  --zemin-derin:    #F6F6F3;   /* hesaplama ve alt bilgi bandı */
+  --panel:          #FFFFFF;   /* tablolar, kartlar */
+  --panel-giris:    #F7F7F4;   /* form alanları */
+  --panel-ic:       #FAFAF8;   /* vitrin kutucukları */
 
   --yazi:           #14261F;   /* zümrüde çalan koyu mürekkep */
   --yazi-2:         #4B5C54;
@@ -28,12 +28,12 @@
 
   --dugme-1:        #17493B;
   --dugme-2:        #0B2A22;
-  --dugme-yazi:     #F4EBD6;
-  --dugme-golge:    rgba(11, 42, 34, 0.32);
+  --dugme-yazi:     #FFFFFF;
+  --dugme-golge:    rgba(11, 42, 34, 0.28);
 
   --cizgi:          rgba(160, 120, 50, 0.26);
   --cizgi-guclu:    rgba(160, 120, 50, 0.55);
-  --cizgi-yumusak:  rgba(20, 38, 31, 0.10);
+  --cizgi-yumusak:  rgba(20, 38, 31, 0.09);
   --uzerine:        rgba(160, 120, 50, 0.08);
   --satir-uzerine:  rgba(20, 38, 31, 0.03);
 
@@ -44,19 +44,19 @@
   --asagi-zemin:    rgba(174, 63, 45, 0.10);
   --uyari-zemin:    rgba(140, 95, 14, 0.09);
 
-  --ust-zemin:      rgba(245, 239, 227, 0.86);
-  --giris-isik:     rgba(176, 138, 69, 0.18);
-  --giris-golge:    rgba(20, 38, 31, 0.05);
-  --vitrin-1:       #FFFDF8;
-  --vitrin-2:       #F8F1E4;
-  --vitrin-damga:   #FEFAF3;   /* vitrindeki damganın iç halkası */
-  --golge:          0 40px 80px -44px rgba(70, 50, 20, 0.34), 0 1px 0 rgba(255, 255, 255, 0.8) inset;
-  --harita-filtre:  grayscale(0.25) sepia(0.12);
+  --ust-zemin:      rgba(255, 255, 255, 0.86);
+  --giris-isik:     rgba(176, 138, 69, 0.11);
+  --giris-golge:    rgba(20, 38, 31, 0.03);
+  --vitrin-1:       #FFFFFF;
+  --vitrin-2:       #FBFAF7;
+  --vitrin-damga:   #FFFFFF;   /* vitrindeki damganın iç halkası */
+  --golge:          0 30px 60px -32px rgba(16, 32, 26, 0.24), 0 1px 3px rgba(16, 32, 26, 0.05);
+  --harita-filtre:  grayscale(0.2);
   --secim:          rgba(176, 138, 69, 0.28);
 
   /* Giriş bölümündeki giyoş deseni (js/site.js okur) */
   --giyos-renk:     150, 108, 40;
-  --giyos-guc:      1.3;
+  --giyos-guc:      1.1;
 
   --font-baslik: "Bodoni Moda", "Bodoni 72", Didot, "Times New Roman", Georgia, serif;
   --font-govde:  "Manrope", "Segoe UI", system-ui, -apple-system, sans-serif;
