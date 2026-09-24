@@ -18,6 +18,7 @@ window.SEVILEN = {
     whatsappMesaj: 'Merhaba, fiyat bilgisi almak istiyorum.',
     instagram: 'sevilenkuyumculuk',     // @ işareti olmadan
     adres: 'Kuyumcular Çarşısı No: 00, Eyyübiye / Şanlıurfa',
+    sehir: 'Şanlıurfa',
     konumKisa: 'Şanlıurfa · Kuyumcular Çarşısı',
     haritaArama: 'Kuyumcular Çarşısı, Eyyübiye, Şanlıurfa', // Google Haritalar'da aranacak metin
     kurulusYili: 1998,

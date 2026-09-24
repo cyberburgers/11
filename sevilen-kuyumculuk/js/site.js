@@ -515,8 +515,14 @@
     var cy = genis ? kutu.height * 0.5 : kutu.height * 0.2;
     var R = genis ? Math.min(kutu.height * 0.58, 440) : Math.min(kutu.width * 0.62, 320);
 
+    // Desenin rengi ve yoğunluğu temadan gelir (css/site.css → --giyos-*)
+    var stil = getComputedStyle(document.documentElement);
+    var renk = stil.getPropertyValue('--giyos-renk').trim() || '201, 165, 92';
+    var guc = parseFloat(stil.getPropertyValue('--giyos-guc')) || 1;
+    function a(alfa) { return Math.min(1, alfa * guc).toFixed(3); }
+
     function halka(yaricap, k, d, faz, alfa) {
-      x.strokeStyle = 'rgba(201, 165, 92, ' + alfa + ')';
+      x.strokeStyle = 'rgba(' + renk + ', ' + alfa + ')';
       x.beginPath();
       var N = 1800;
       for (var i = 0; i <= N; i++) {
@@ -529,17 +535,135 @@
     }
 
     x.lineWidth = 0.6;
-    for (var m = 0; m < 7; m++) halka(R * (1 - m * 0.028), 41, 0.07, m * 0.45, 0.2 - m * 0.018);
-    for (var n = 0; n < 5; n++) halka(R * (0.66 - n * 0.03), 29, 0.11, n * 0.6, 0.14 - n * 0.02);
+    for (var m = 0; m < 7; m++) halka(R * (1 - m * 0.028), 41, 0.07, m * 0.45, a(0.2 - m * 0.018));
+    for (var n = 0; n < 5; n++) halka(R * (0.66 - n * 0.03), 29, 0.11, n * 0.6, a(0.14 - n * 0.02));
     x.lineWidth = 0.8;
-    x.strokeStyle = 'rgba(201, 165, 92, 0.12)';
+    x.strokeStyle = 'rgba(' + renk + ', ' + a(0.12) + ')';
     x.beginPath(); x.arc(cx, cy, R * 1.1, 0, Math.PI * 2); x.stroke();
     x.beginPath(); x.arc(cx, cy, R * 0.44, 0, Math.PI * 2); x.stroke();
   }
 
+  /* ---------- Açık / koyu tema ---------- */
+
+  var TEMA_ANAHTAR = 'sevilen-tema';
+  var TEMA_RENGI = { acik: '#F5EFE3', koyu: '#0B2A22' };
+  var temaGecisZaman;
+
+  function simdikiTema() {
+    return document.documentElement.getAttribute('data-tema') === 'koyu' ? 'koyu' : 'acik';
+  }
+
+  function temaDugmesiniGuncelle() {
+    var koyu = simdikiTema() === 'koyu';
+    var d = $('#tema-dugme');
+    d.setAttribute('aria-pressed', koyu ? 'true' : 'false');
+    d.title = koyu ? 'Açık temaya geç' : 'Koyu temaya geç';
+  }
+
+  function temaUygula(tema, yumusak) {
+    var kok = document.documentElement;
+    var azHareket = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    if (yumusak && !azHareket) {
+      kok.classList.add('tema-gecis');
+      clearTimeout(temaGecisZaman);
+      temaGecisZaman = setTimeout(function () { kok.classList.remove('tema-gecis'); }, 420);
+    }
+    kok.setAttribute('data-tema', tema);
+    var meta = document.getElementById('tema-rengi');
+    if (meta) meta.setAttribute('content', TEMA_RENGI[tema]);
+    temaDugmesiniGuncelle();
+    giyosCiz();
+  }
+
+  function temaKur() {
+    temaDugmesiniGuncelle();
+    $('#tema-dugme').addEventListener('click', function () {
+      var yeni = simdikiTema() === 'koyu' ? 'acik' : 'koyu';
+      try { localStorage.setItem(TEMA_ANAHTAR, yeni); } catch (e) {}
+      temaUygula(yeni, true);
+    });
+    // Başka sekmede tema değişirse bu sekme de uysun
+    window.addEventListener('storage', function (e) {
+      if (e.key === TEMA_ANAHTAR) temaUygula(e.newValue === 'koyu' ? 'koyu' : 'acik', false);
+    });
+  }
+
+  /* ---------- Mobil menü ---------- */
+
+  function menuKur() {
+    var dugme = $('#menu-dugme');
+    var menu = $('#mobil-menu');
+
+    function ac(acik) {
+      menu.hidden = !acik;
+      dugme.setAttribute('aria-expanded', acik ? 'true' : 'false');
+    }
+
+    dugme.addEventListener('click', function () { ac(menu.hidden); });
+    menu.addEventListener('click', function (e) {
+      if (e.target.closest('a')) ac(false);
+    });
+    document.addEventListener('keydown', function (e) {
+      if (e.key === 'Escape' && !menu.hidden) {
+        ac(false);
+        dugme.focus();
+      }
+    });
+    if (window.matchMedia) {
+      var genis = window.matchMedia('(min-width: 861px)');
+      var kapat = function (m) { if (m.matches) ac(false); };
+      if (genis.addEventListener) genis.addEventListener('change', kapat);
+      else if (genis.addListener) genis.addListener(kapat);
+    }
+  }
+
+  /* ---------- Google için işletme bilgisi (yapısal veri) ---------- */
+
+  function yapisalVeri() {
+    var f = A.firma;
+    var gunler = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+    var saatler = [];
+    Object.keys(f.calismaSaatleri || {}).forEach(function (g) {
+      var s = f.calismaSaatleri[g];
+      if (s) {
+        saatler.push({
+          '@type': 'OpeningHoursSpecification',
+          dayOfWeek: 'https://schema.org/' + gunler[g],
+          opens: s[0],
+          closes: s[1]
+        });
+      }
+    });
+    var veri = {
+      '@context': 'https://schema.org',
+      '@type': 'JewelryStore',
+      name: f.ad,
+      url: location.origin + location.pathname,
+      image: new URL('img/paylasim.jpg', location.href).href,
+      telephone: f.telefonArama,
+      address: {
+        '@type': 'PostalAddress',
+        streetAddress: f.adres,
+        addressLocality: f.sehir || '',
+        addressCountry: 'TR'
+      },
+      openingHoursSpecification: saatler
+    };
+    if (f.instagram) veri.sameAs = ['https://instagram.com/' + f.instagram];
+    if (f.kurulusYili) veri.foundingDate = String(f.kurulusYili);
+
+    var s = document.createElement('script');
+    s.type = 'application/ld+json';
+    s.textContent = JSON.stringify(veri);
+    document.head.appendChild(s);
+  }
+
   /* ---------- Başlat ---------- */
 
+  temaKur();
+  menuKur();
   firmaDoldur();
+  if (!ONIZLEME) yapisalVeri();
   tablolariCiz();
   vitrinCiz();
   hesapKur();

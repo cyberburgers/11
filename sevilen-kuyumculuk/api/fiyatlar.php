@@ -322,6 +322,17 @@ function alanBul(array $oge, array $adaylar)
 /** Kurulum sırasında neyin okunduğunu gösterir: api/fiyatlar.php?tani=1 */
 function tani()
 {
+    // Tanı sayfası önbelleği atlayıp ŞUKOB'a doğrudan gider; art arda
+    // açılarak kaynağın yorulmasın diye 10 saniyede bir kez çalışır.
+    $zamanDosya = __DIR__ . '/onbellek/tani-zamani';
+    $son = is_file($zamanDosya) ? (int) @file_get_contents($zamanDosya) : 0;
+    if (time() - $son < 10) {
+        http_response_code(429);
+        echo json_encode(['hata' => 'Tanı sayfası 10 saniyede bir açılabilir, biraz bekleyip yenileyin.'], JSON_UNESCAPED_UNICODE);
+        return;
+    }
+    @file_put_contents($zamanDosya, (string) time());
+
     $bas  = microtime(true);
     $html = indir(KAYNAK_URL, $hata);
     $sure = round((microtime(true) - $bas) * 1000);
