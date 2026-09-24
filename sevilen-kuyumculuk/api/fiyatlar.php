@@ -139,7 +139,8 @@ function kaynaktanCek(array $ayar): array
         CURLOPT_ENCODING       => '',
         CURLOPT_USERAGENT      => 'Mozilla/5.0',
         CURLOPT_REFERER        => 'https://sukobfiyat.com/',
-        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+        // sukobfiyat.com sayfasının kendi isteğiyle aynı başlıklar
+        CURLOPT_HTTPHEADER     => ['Accept: application/json, text/javascript, */*; q=0.01', 'X-Requested-With: XMLHttpRequest'],
         CURLOPT_HEADERFUNCTION => function ($ch, $satir) use (&$basliklar) {
             $parca = explode(':', $satir, 2);
             if (count($parca) === 2) {
