@@ -128,6 +128,19 @@ function cevap(array $liste, array $ayar, string $durum)
         ];
     }
 
+    // Verinin yaşı (sn): ŞUKOB'un son güncellemesinden bu yana geçen süre.
+    // Ön yüz ziyaretçinin saatine güvenmeden "fiyatlar eski" uyarısı verir.
+    $enYeni = 0;
+    foreach ($cikti as $o) {
+        $t = $o['guncelleme'] ? strtotime($o['guncelleme']) : 0;
+        if ($t > $enYeni) {
+            $enYeni = $t;
+        }
+    }
+    if ($enYeni) {
+        header('X-Fiyat-Yasi: ' . max(0, time() - $enYeni));
+    }
+    header('Access-Control-Expose-Headers: X-Fiyat-Durumu, X-Fiyat-Yasi');
     header('X-Fiyat-Durumu: ' . $durum);
     echo json_encode($cikti, JSON_UNESCAPED_UNICODE);
     exit;

@@ -131,6 +131,7 @@
       bekliyor: 'Bağlanıyor',
       canli: 'Canlı',
       bayat: 'Son bilinen fiyat',
+      eski: 'Güncel değil',
       ornek: 'Örnek fiyatlar',
       hata: 'Bağlantı yok'
     }[tip];
@@ -148,7 +149,7 @@
     d.liste.forEach(function (o) { FIYAT[o.kod] = o; SIRA.push(o.kod); });
     var ornek = !!(window.FIYAT_TABLOSU && window.FIYAT_TABLOSU.ornekVeri);
     $('#ornek-uyari').hidden = !ornek;
-    durumYaz(ornek ? 'ornek' : d.bayat ? 'bayat' : 'canli', d.sonGuncelleme);
+    durumYaz(ornek ? 'ornek' : d.bayat ? 'bayat' : d.eski ? 'eski' : 'canli', d.sonGuncelleme);
     vitrinGuncelle(d.degisim || {});
     hesapSecenekleri();
     hesapla();

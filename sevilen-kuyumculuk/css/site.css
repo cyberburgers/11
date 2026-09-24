@@ -654,6 +654,7 @@ h1 {
 }
 .durum[data-tip="canli"]::before { animation: nabiz 2.2s ease-out infinite; }
 .durum[data-tip="bayat"],
+.durum[data-tip="eski"],
 .durum[data-tip="ornek"] {
   color: var(--uyari);
   background: var(--uyari-zemin);

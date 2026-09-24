@@ -49,6 +49,35 @@
 }
 .ft-zaman.ft-uyari { color: var(--ft-uyari); font-weight: 600; }
 
+/* Veri güncel değilken belirgin uyarı */
+.ft-uyari-kutu {
+  margin: 0 0 16px;
+  padding: 12px 16px 12px 44px;
+  position: relative;
+  border: 1px solid color-mix(in srgb, var(--ft-uyari) 45%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--ft-uyari) 9%, var(--ft-panel));
+  color: var(--ft-uyari);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+.ft-uyari-kutu::before {
+  content: "!";
+  position: absolute;
+  left: 14px;
+  top: 12px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ft-uyari);
+  color: var(--ft-panel);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 20px;
+  text-align: center;
+}
+
 .ft-mesaj {
   margin: 0;
   padding: 28px 20px;

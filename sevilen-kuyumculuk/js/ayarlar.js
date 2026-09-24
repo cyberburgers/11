@@ -70,6 +70,7 @@ window.SEVILEN = {
 window.FIYAT_TABLOSU = {
   adres: 'api/fiyatlar.php',   // sunucudaki fiyat uç noktası
   yenilemeSaniye: 10,          // tablo kaç saniyede bir yenilensin
+  eskiUyariDakika: 5,          // fiyatlar bu kadar dakikadır değişmediyse uyarı göster
 
   // Ekranda virgülden sonra kaç hane gösterilsin. 0 hanede kuruş ŞUKOB'daki
   // gibi kesilir (6659,77 → 6.659), diğerlerinde yuvarlanır (55,406 → 55,41).

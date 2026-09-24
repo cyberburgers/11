@@ -33,7 +33,7 @@ Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üz
 4. Her şey tamamsa `api/ayarlar.php` içindeki `tani_acik` değerini `false` yapın.
 5. `index.html` içinde `www.example.com` yazan yeri kendi alan adınızla değiştirin (WhatsApp önizleme görseli buna bağlı).
 
-Not: GitHub Pages ya da Netlify gibi yalnızca düz HTML barındıran yerlerde PHP çalışmaz. Site açılır ama fiyatlar gelmez.
+Not: GitHub Pages ya da Netlify gibi yalnızca düz HTML barındıran yerlerde PHP çalışmaz. Site açılır ama fiyatlar gelmez (sayfada "Fiyatlar şu an alınamıyor" yazar). Netlify için fiyat uç noktasının Netlify Functions'a (JavaScript) taşınması gerekir.
 
 ## Fiyat ayarları (`api/ayarlar.php`)
 
@@ -52,6 +52,8 @@ Uç nokta: `api/fiyatlar.php` (Apache/LiteSpeed'de `api/fiyatlar` de çalışır
 ```
 
 ŞUKOB'a ulaşılamazsa ya da bozuk veri gelirse son başarılı veri döner (`X-Fiyat-Durumu: bayat` başlığıyla). Sayfada "kaynağa şu an ulaşılamıyor" notu ve verinin saati görünür. Hiç veri yoksa uç nokta `502 {"hata":"Fiyatlar alınamadı"}` döner, sayfada "Fiyatlar şu an alınamıyor" yazar. Son hatanın sebebi `api/onbellek/son-hata.json` dosyasına yazılır.
+
+**Güncel olmayan veri uyarısı:** Tablonun üstünde belirgin bir uyarı kutusu çıkar: (1) ŞUKOB'a ulaşılamıyor ve son bilinen fiyat gösteriliyorsa, (2) ŞUKOB cevap verse bile fiyatlar `eskiUyariDakika` (varsayılan 5, `js/ayarlar.js`) dakikadır değişmediyse. Üstteki rozet de "Güncel değil" / "Son bilinen fiyat" olur. Verinin yaşı ziyaretçinin saatinden değil, sunucudan (`X-Fiyat-Yasi` başlığı) hesaplanır.
 
 ## Fiyat tablosunu başka sayfada kullanma
 

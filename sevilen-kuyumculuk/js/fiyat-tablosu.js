@@ -29,6 +29,8 @@
   var AYAR = window.FIYAT_TABLOSU || {};
   var ADRES = AYAR.adres || 'api/fiyatlar.php';
   var YENILEME_MS = (AYAR.yenilemeSaniye || 30) * 1000;
+  // ŞUKOB cevap verse bile fiyatlar bu kadar dakikadır değişmediyse uyar
+  var ESKI_DK = AYAR.eskiUyariDakika || 5;
   var KAYNAK_YAZISI = 'Kaynak: Şanlıurfa Kuyumcular Odası tavsiye fiyatları. Bilgi amaçlıdır, yatırım tavsiyesi değildir.';
 
   var ONDALIK = AYAR.ondalik || {};
@@ -95,19 +97,20 @@
           clearTimeout(sure);
           if (!r.ok) throw new Error('HTTP ' + r.status);
           var bayat = r.headers.get('X-Fiyat-Durumu') === 'bayat';
-          return r.json().then(function (liste) { return { liste: liste, bayat: bayat }; });
+          var yas = parseInt(r.headers.get('X-Fiyat-Yasi'), 10);
+          return r.json().then(function (liste) { return { liste: liste, bayat: bayat, yas: isNaN(yas) ? null : yas }; });
         });
     }
 
     istek
       .then(function (s) {
         if (!Array.isArray(s.liste) || !s.liste.length) throw new Error('Boş yanıt');
-        basarili(s.liste, s.bayat);
+        basarili(s.liste, s.bayat, s.yas);
       })
       .catch(function () {
         durum.hata = true;
         tumunuCiz({});
-        olay('fiyatlar:hata', { liste: durum.liste });
+        olay('fiyatlar:hata', { liste: durum.liste, uyari: uyariMetni() });
       })
       .then(function () {
         istekte = false;
@@ -115,7 +118,7 @@
       });
   }
 
-  function basarili(liste, bayat) {
+  function basarili(liste, bayat, yas) {
     var degisim = {};
     var enYeni = null;
     liste.forEach(function (o) {
@@ -133,9 +136,49 @@
     durum.bayat = bayat;
     durum.hata = false;
     durum.sonGuncelleme = enYeni;
+    durum.yas = yas == null ? null : yas;
+    durum.yasAlindi = Date.now();
     tumunuCiz(degisim);
-    olay('fiyatlar:guncellendi', { liste: liste, degisim: degisim, bayat: bayat, sonGuncelleme: enYeni });
+    olay('fiyatlar:guncellendi', { liste: liste, degisim: degisim, bayat: bayat, eski: uyariVar(), sonGuncelleme: enYeni });
   }
+
+  // Verinin şu anki yaşı (sn). Sunucunun bildirdiği yaş + o andan beri geçen süre.
+  function veriYasi() {
+    if (durum.yas == null) return null;
+    return durum.yas + Math.round((Date.now() - durum.yasAlindi) / 1000);
+  }
+
+  function sureYaz(sn) {
+    var dk = Math.max(1, Math.round(sn / 60));
+    if (dk < 60) return dk + ' dakika';
+    var sa = Math.floor(dk / 60);
+    return sa < 48 ? sa + ' saat' : Math.floor(sa / 24) + ' gün';
+  }
+
+  // Ziyaretçiyi uyaracak bir durum var mı? Varsa metnini döner.
+  function uyariMetni() {
+    if (!durum.liste) return '';
+    var ne = durum.sonGuncelleme ? saat(durum.sonGuncelleme) : '';
+    var yas = veriYasi();
+    var once = yas != null ? ' (' + sureYaz(yas) + ' önce)' : '';
+    if (durum.hata || durum.bayat) {
+      return 'ŞUKOB\'dan şu an güncel fiyat alınamıyor. Gösterilen fiyatlar ' +
+        (ne ? ne + once + ' itibarıyla ' : '') + 'son bilinen fiyatlardır. Güncel fiyat için lütfen bizi arayın.';
+    }
+    if (yas != null && yas > ESKI_DK * 60) {
+      return 'Fiyatlar ' + sureDir(yas) + ' güncellenmedi (son güncelleme ' + ne +
+        '). Güncel fiyat için lütfen bizi arayın.';
+    }
+    return '';
+  }
+
+  // "5 dakikadır", "2 saattir", "3 gündür"
+  function sureDir(sn) {
+    var s = sureYaz(sn);
+    return s + (/saat$/.test(s) ? 'tir' : /gün$/.test(s) ? 'dür' : 'dır');
+  }
+
+  function uyariVar() { return !!uyariMetni(); }
 
   function yon(eski, yeni) {
     if (eski == null || yeni == null || eski === yeni) return null;
@@ -198,8 +241,11 @@
     var baslik = kok.getAttribute('data-baslik');
     if (baslik) ust.appendChild(el('h3', 'ft-baslik', baslik));
     t.zaman = el('span', 'ft-zaman');
-    t.zaman.setAttribute('aria-live', 'polite');
     ust.appendChild(t.zaman);
+
+    t.uyari = el('p', 'ft-uyari-kutu');
+    t.uyari.setAttribute('role', 'status');
+    t.uyari.hidden = true;
 
     t.mesaj = el('p', 'ft-mesaj', 'Yükleniyor…');
     t.icerik = el('div', 'ft-gruplar');
@@ -230,6 +276,7 @@
 
     kok.textContent = '';
     kok.appendChild(ust);
+    kok.appendChild(t.uyari);
     kok.appendChild(t.mesaj);
     kok.appendChild(t.icerik);
     kok.appendChild(el('p', 'ft-kaynak', KAYNAK_YAZISI));
@@ -243,18 +290,12 @@
   }
 
   function ciz(t, degisim) {
-    // Üst satır: son güncelleme / uyarı
-    var zaman = durum.sonGuncelleme ? 'Son güncelleme: ' + saat(durum.sonGuncelleme) : '';
-    if (durum.hata && durum.liste) {
-      t.zaman.textContent = 'Fiyatlar şu an alınamıyor' + (zaman ? ' · ' + zaman : '');
-      t.zaman.className = 'ft-zaman ft-uyari';
-    } else if (durum.bayat) {
-      t.zaman.textContent = zaman + ' · kaynağa şu an ulaşılamıyor';
-      t.zaman.className = 'ft-zaman ft-uyari';
-    } else {
-      t.zaman.textContent = zaman;
-      t.zaman.className = 'ft-zaman';
-    }
+    // Üst satır: son güncelleme; sorun varsa belirgin uyarı kutusu
+    t.zaman.textContent = durum.sonGuncelleme ? 'Son güncelleme: ' + saat(durum.sonGuncelleme) : '';
+    var uyari = uyariMetni();
+    t.zaman.className = 'ft-zaman' + (uyari ? ' ft-uyari' : '');
+    if (t.uyari.textContent !== uyari) t.uyari.textContent = uyari;
+    t.uyari.hidden = !uyari;
 
     if (!durum.liste) {
       t.mesaj.textContent = durum.hata ? 'Fiyatlar şu an alınamıyor' : 'Yükleniyor…';
