@@ -99,8 +99,10 @@ function cevap(array $liste, array $ayar, string $durum)
         $cikti[] = [
             'ad'         => $ad !== null && $ad !== '' ? $ad : $oge['ad'],
             'kod'        => $kod,
-            'alis'       => round($oge['alis'], 2),
-            'satis'      => round($oge['satis'] * (1 + $marj / 100), 2),
+            // Kaynaktaki kayan nokta artıkları temizlenir; ekranda kaç hane
+            // gösterileceğine js/ayarlar.js (FIYAT_TABLOSU.ondalik) karar verir.
+            'alis'       => round($oge['alis'], 4),
+            'satis'      => round($oge['satis'] * (1 + $marj / 100), 4),
             'guncelleme' => $oge['guncelleme'],
         ];
     }

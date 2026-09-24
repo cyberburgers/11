@@ -6,7 +6,7 @@ Tek sayfalık site: canlı altın, sarrafiye, döviz ve gümüş fiyatları (al�
 - **Telefonda:** açılır menü ve "Ana ekrana ekle" ikonu var. Müşteri fiyat sayfasını uygulama gibi ekranına ekleyebilir.
 - **Paylaşım:** Site linki WhatsApp'ta paylaşılınca logolu önizleme görseli çıkar. Google için işletme bilgisi (adres, telefon, çalışma saatleri) sayfaya otomatik eklenir.
 
-Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, 30 saniyede bir yenilenir.
+Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 15 saniyede bir yenilenir. Altın ve sarrafiye ŞUKOB listesindeki gibi kuruşsuz, gümüş 2, döviz 3 haneyle gösterilir.
 
 ## Dosyalar
 
@@ -40,12 +40,14 @@ Not: GitHub Pages ya da Netlify gibi yalnızca düz HTML barındıran yerlerde P
 - **`urunler`**: Gösterilecek ürün kodları, bu sırayla. `'kod' => 'Görünen ad'`. Ad yerine `null` yazılırsa ŞUKOB'daki ad kullanılır. Satırı silen ürün sitede görünmez.
   Kodlar: `HAS, 22_ayar_bilezik, hurda, yeni_ceyrek, yeni_yarim, yeni_ziynet, eski_ceyrek, eski_yarim, eski_ziynet, cnc, sarnel, GMS, USD, EUR`
 - **`kar_marji_yuzde`**: Satış fiyatlarına eklenecek yüzde. Varsayılan `0`.
-- **`onbellek_sn`**: ŞUKOB'a en fazla kaç saniyede bir gidileceği. Varsayılan `30`.
+- **`onbellek_sn`**: ŞUKOB'a en fazla kaç saniyede bir gidileceği. Varsayılan `10` (ŞUKOB fiyatları da yaklaşık 10 saniyede bir güncelliyor).
+
+Ekranda kaç hane gösterileceği ve sayfanın yenilenme süresi `js/ayarlar.js` içindeki `FIYAT_TABLOSU` bölümündedir (`ondalik`, `yenilemeSaniye`). Fazla haneler yuvarlanmaz, ŞUKOB'daki gibi kesilir; hesaplama aracı da ekranda görünen fiyatı kullanır.
 
 Uç nokta: `api/fiyatlar.php` (Apache/LiteSpeed'de `api/fiyatlar` de çalışır). Çıktı:
 
 ```json
-[{"ad":"Has Altın","kod":"HAS","alis":6657.88,"satis":6700.32,"guncelleme":"2026-09-24T20:36:16+03:00"}]
+[{"ad":"Has Altın","kod":"HAS","alis":6659.77,"satis":6702.24,"guncelleme":"2026-09-24T20:58:11+03:00"}]
 ```
 
 ŞUKOB'a ulaşılamazsa ya da bozuk veri gelirse son başarılı veri döner (`X-Fiyat-Durumu: bayat` başlığıyla). Sayfada "kaynağa şu an ulaşılamıyor" notu ve verinin saati görünür. Hiç veri yoksa uç nokta `502 {"hata":"Fiyatlar alınamadı"}` döner, sayfada "Fiyatlar şu an alınamıyor" yazar. Son hatanın sebebi `api/onbellek/son-hata.json` dosyasına yazılır.

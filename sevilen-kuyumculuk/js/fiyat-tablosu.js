@@ -12,7 +12,11 @@
      data-baslik="Güncel fiyatlar"  → tablonun üstündeki başlık
 
    Ayar (isteğe bağlı, bu dosyadan önce):
-     window.FIYAT_TABLOSU = { adres: 'api/fiyatlar.php', yenilemeSaniye: 30 };
+     window.FIYAT_TABLOSU = { adres: 'api/fiyatlar.php', yenilemeSaniye: 30,
+                              ondalik: { varsayilan: 2, USD: 3 } };
+     Ondalık fazlası yuvarlanmaz, kesilir (ŞUKOB listesiyle aynı görünsün diye).
+     Diğer kodlar aynı sayıyı FiyatTablosu.kes(kod, deger) ve
+     FiyatTablosu.bicimle(kod, deger) ile gösterebilir.
 
    Sayfadaki başka kodlar için olaylar (document üzerinde):
      'fiyatlar:guncellendi'  detail: { liste, degisim, bayat, sonGuncelleme }
@@ -27,7 +31,29 @@
   var YENILEME_MS = (AYAR.yenilemeSaniye || 30) * 1000;
   var KAYNAK_YAZISI = 'Kaynak: Şanlıurfa Kuyumcular Odası tavsiye fiyatları. Yatırım tavsiyesi değildir.';
 
-  var sayi = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  var ONDALIK = AYAR.ondalik || {};
+  var bicimler = {};
+
+  function hane(kod) {
+    var d = ONDALIK[kod];
+    if (d == null) d = ONDALIK.varsayilan;
+    return d == null ? 2 : d;
+  }
+
+  // Fazla haneleri keser: 6659,77 → 6659 ; 48,8130 → 48,813
+  function kes(kod, deger) {
+    if (deger == null || !isFinite(deger)) return null;
+    var c = Math.pow(10, hane(kod));
+    return Math.floor(deger * c + 1e-6) / c;
+  }
+
+  function bicimle(kod, deger) {
+    var n = kes(kod, deger);
+    if (n == null) return '—';
+    var d = hane(kod);
+    if (!bicimler[d]) bicimler[d] = new Intl.NumberFormat('tr-TR', { minimumFractionDigits: d, maximumFractionDigits: d });
+    return bicimler[d].format(n);
+  }
   var saat = function (iso) {
     var t = new Date(iso);
     if (isNaN(t)) return '';
@@ -251,16 +277,16 @@
         g.govde.appendChild(s.tr); // sırayı korur
         s.tr.hidden = false;
         s.ad.textContent = o.ad;
-        hucre(s.alis, o.alis, degisim[kod] && degisim[kod].alis);
-        hucre(s.satis, o.satis, degisim[kod] && degisim[kod].satis);
+        hucre(s.alis, bicimle(kod, o.alis), degisim[kod] && degisim[kod].alis);
+        hucre(s.satis, bicimle(kod, o.satis), degisim[kod] && degisim[kod].satis);
         var d = degisim[kod] && (degisim[kod].satis || degisim[kod].alis);
         if (d) s.tr.setAttribute('data-yon', d);
       });
     });
   }
 
-  function hucre(td, deger, yon) {
-    td.textContent = deger == null ? '—' : sayi.format(deger);
+  function hucre(td, metin, yon) {
+    td.textContent = metin;
     if (!yon) return;
     td.classList.remove('ft-yukari', 'ft-asagi');
     void td.offsetWidth; // animasyonu baştan başlat
@@ -277,7 +303,9 @@
   window.FiyatTablosu = {
     bagla: bagla,
     yenile: cek,
-    veri: function () { return durum.liste; }
+    veri: function () { return durum.liste; },
+    kes: kes,
+    bicimle: bicimle
   };
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', baslat);

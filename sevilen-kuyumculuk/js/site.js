@@ -118,7 +118,7 @@
       if (ad) ad.textContent = o ? o.ad : kod;
       ['alis', 'satis'].forEach(function (alan) {
         var h = $('[data-alan="' + alan + '"]', kutu);
-        h.textContent = o ? yaz(o[alan]) : '—';
+        h.textContent = o ? window.FiyatTablosu.bicimle(kod, o[alan]) : '—';
         h.classList.toggle('bos', !o);
         if (d[alan]) parlat(h, d[alan]);
       });
@@ -208,17 +208,19 @@
       return;
     }
     var al = $('#h-al').checked;
-    var fiyat = al ? o.satis : o.alis;
+    // Ekranda görünen (kesilmiş) fiyatla hesapla ki müşterinin kendi hesabı tutsun
+    var fiyat = window.FiyatTablosu.kes(o.kod, al ? o.satis : o.alis);
     if (fiyat == null) {
       hDetay.textContent = 'Bu ürünün fiyatı şu an alınamıyor.';
       return;
     }
 
     hTutar.classList.remove('bos');
-    hTutar.textContent = yaz(miktar * fiyat);
+    var tutar = miktar * fiyat;
+    hTutar.textContent = yaz(tutar, Math.abs(tutar - Math.round(tutar)) < 0.005 ? 0 : 2);
     var parabirimi = birim === 'USD' || birim === 'EUR';
-    var miktarYazi = yaz(miktar, miktar % 1 ? 2 : 0) + ' ' + birim + (parabirimi ? '' : ' ' + o.ad);
-    var detay = miktarYazi + ' × ' + yaz(fiyat) + ' ₺ · ' + (al ? 'satış' : 'alış') + ' fiyatı';
+    var miktarYazi = new Intl.NumberFormat('tr-TR', { maximumFractionDigits: 3 }).format(miktar) + ' ' + birim + (parabirimi ? '' : ' ' + o.ad);
+    var detay = miktarYazi + ' × ' + window.FiyatTablosu.bicimle(o.kod, fiyat) + ' ₺ · ' + (al ? 'satış' : 'alış') + ' fiyatı';
     if ((A.iscilikli || []).indexOf(o.kod) > -1) detay += ' · işçilik hariç';
     hDetay.textContent = detay;
   }

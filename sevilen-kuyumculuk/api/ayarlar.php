@@ -30,7 +30,7 @@ return [
     'kar_marji_yuzde' => 0,
 
     // Kaynağa en fazla kaç saniyede bir gidilsin
-    'onbellek_sn' => 30,
+    'onbellek_sn' => 10,
 
     // Kaynak ayarları (genelde değiştirmeniz gerekmez)
     'kaynak_url'     => 'https://sukobfiyat.com/api/prices/',

@@ -69,5 +69,14 @@ window.SEVILEN = {
 /* Fiyat tablosu bileşeninin ayarları (js/fiyat-tablosu.js) */
 window.FIYAT_TABLOSU = {
   adres: 'api/fiyatlar.php',   // sunucudaki fiyat uç noktası
-  yenilemeSaniye: 30           // tablo kaç saniyede bir yenilensin
+  yenilemeSaniye: 15,          // tablo kaç saniyede bir yenilensin
+
+  // Ekranda virgülden sonra kaç hane gösterilsin. Fazlası yuvarlanmaz,
+  // ŞUKOB'daki gibi kesilir. Hesaplama da ekranda görünen fiyatla yapılır.
+  ondalik: {
+    varsayilan: 0,   // altın ve sarrafiye: kuruşsuz (6.659)
+    GMS: 2,          // gümüş: 93,24
+    USD: 3,          // 48,813
+    EUR: 3
+  }
 };
