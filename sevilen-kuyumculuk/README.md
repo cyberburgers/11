@@ -83,3 +83,11 @@ php -S localhost:8000
 ## Bilinen risk
 
 `sukobfiyat.com/api/prices/` ŞUKOB'un kendi sayfası için kullandığı iç adrestir, resmî ve açık bir API değildir. Haber verilmeden değişebilir ya da kapanabilir. Kalıcı kullanım için odadan izin alınması önerilir.
+
+## Sahte kaynakla test
+
+Kaynak adresi `SUKOB_URL` ortam değişkeniyle değiştirilebilir. Kodu değiştirmeden sahte bir sunucuyla test etmek için:
+
+```
+SUKOB_URL="http://127.0.0.1:8096/api/prices/" php -S 127.0.0.1:8095
+```

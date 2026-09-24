@@ -21,6 +21,11 @@ header('X-Content-Type-Options: nosniff');
 
 $AYAR = require __DIR__ . '/ayarlar.php';
 
+// Test için kaynak adresi SUKOB_URL ortam değişkeniyle değiştirilebilir
+if (getenv('SUKOB_URL')) {
+    $AYAR['kaynak_url'] = getenv('SUKOB_URL');
+}
+
 $klasor        = __DIR__ . '/onbellek';
 $onbellekDosya = $klasor . '/kaynak.json';
 $hataDosya     = $klasor . '/son-hata.json';
