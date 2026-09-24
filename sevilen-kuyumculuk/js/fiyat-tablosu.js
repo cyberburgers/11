@@ -10,6 +10,8 @@
      data-kodlar="HAS,USD,EUR"      → yalnızca bu ürünler, bu sırayla
      data-gruplar="Başlık:KOD,KOD|Başlık:KOD"  → ürünleri başlıklı tablolara böler
      data-baslik="Güncel fiyatlar"  → tablonun üstündeki başlık
+     data-duzen="tek"               → gruplar ayrı kutular yerine tek tabloda,
+                                      başlık satırlarıyla gösterilir
 
    Ayar (isteğe bağlı, bu dosyadan önce):
      window.FIYAT_TABLOSU = { adres: 'api/fiyatlar.php', yenilemeSaniye: 30,
@@ -251,7 +253,40 @@
     t.icerik = el('div', 'ft-gruplar');
     t.icerik.hidden = true;
 
-    t.gruplar.forEach(function (g) {
+    function basSatiri() {
+      var bas = el('thead');
+      var sat = el('tr');
+      ['Ürün', 'Alış', 'Satış'].forEach(function (b) {
+        var th = el('th', null, b);
+        th.scope = 'col';
+        sat.appendChild(th);
+      });
+      bas.appendChild(sat);
+      return bas;
+    }
+
+    if (kok.getAttribute('data-duzen') === 'tek') {
+      // Tek tablo: her grup kendi tbody'si, en üstünde grup başlığı satırı
+      t.icerik.className = 'ft-gruplar ft-tek';
+      var kutuT = el('div', 'ft-kutu');
+      var tabloT = el('table', 'ft-tablo');
+      tabloT.appendChild(basSatiri());
+      t.gruplar.forEach(function (g) {
+        var govdeT = el('tbody');
+        if (g.baslik) {
+          var gs = el('tr', 'ft-grup-satir');
+          var gh = el('th', null, g.baslik);
+          gh.colSpan = 3;
+          gh.scope = 'colgroup';
+          gs.appendChild(gh);
+          govdeT.appendChild(gs);
+        }
+        tabloT.appendChild(govdeT);
+        t.govdeler.push({ govde: govdeT, kodlar: g.kodlar });
+      });
+      kutuT.appendChild(tabloT);
+      t.icerik.appendChild(kutuT);
+    } else t.gruplar.forEach(function (g) {
       var kutu = el('div', 'ft-kutu');
       var tablo = el('table', 'ft-tablo');
       if (g.baslik) {

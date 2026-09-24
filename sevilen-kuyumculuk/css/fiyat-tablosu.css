@@ -181,3 +181,53 @@
 @media (prefers-reduced-motion: reduce) {
   .ft-yukari, .ft-asagi { animation-duration: 0.01ms; }
 }
+
+/* ---------- Tek tablo düzeni (data-duzen="tek"): fiyat panosu ---------- */
+
+.ft-tek { display: block; }
+.ft-tek .ft-kutu {
+  border-color: var(--ft-cizgi);
+  box-shadow: 0 24px 50px -36px rgba(16, 32, 26, 0.35);
+}
+.ft-tek .ft-tablo thead th {
+  padding-top: 14px;
+  padding-bottom: 12px;
+  font-size: 12px;
+  border-bottom: 1px solid var(--ft-cizgi);
+}
+.ft-tek .ft-tablo tbody th {
+  padding-block: 14px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.ft-tek .ft-tablo td {
+  padding-block: 14px;
+  font-size: 18px;
+  font-weight: 700;
+}
+.ft-tek .ft-tablo tbody tr:not(.ft-grup-satir):hover { background: color-mix(in srgb, var(--ft-yazi) 3%, transparent); }
+
+.ft-tek .ft-tablo tbody .ft-grup-satir th {
+  padding: 16px 18px 8px;
+  border-top: 1px solid var(--ft-cizgi);
+  font-family: var(--ft-baslik-font);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 20px;
+  text-align: left;
+  color: var(--ft-vurgu);
+  background: color-mix(in srgb, var(--ft-vurgu) 5%, var(--ft-panel));
+}
+.ft-tek .ft-tablo tbody:first-of-type .ft-grup-satir th { border-top: 0; }
+
+@media (min-width: 700px) {
+  .ft-tek .ft-tablo thead th:first-child,
+  .ft-tek .ft-tablo tbody th { padding-left: 26px; }
+  .ft-tek .ft-tablo td,
+  .ft-tek .ft-tablo thead th { padding-right: 26px; }
+  .ft-tek .ft-tablo tbody .ft-grup-satir th { padding-left: 26px; }
+}
+@media (max-width: 420px) {
+  .ft-tek .ft-tablo tbody th { font-size: 15px; }
+  .ft-tek .ft-tablo td { font-size: 16px; }
+}

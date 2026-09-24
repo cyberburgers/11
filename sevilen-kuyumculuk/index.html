@@ -48,173 +48,86 @@
 
 <header class="ust">
   <div class="kap ust-ic">
-    <a class="logo" href="#ana" aria-label="Sevilen Kuyumculuk, sayfa başı">
+    <a class="logo" href="#fiyatlar" aria-label="Sevilen Kuyumculuk">
       <span class="logo-ad">Sevilen</span>
       <span class="logo-alt">Kuyumculuk</span>
     </a>
-    <nav class="menu" aria-label="Sayfa bölümleri">
-      <a href="#fiyatlar">Fiyatlar</a>
-      <a href="#hesapla">Hesapla</a>
-      <a href="#iletisim">İletişim</a>
-    </nav>
     <div class="ust-sag">
       <button type="button" class="yuvarlak tema-dugme" id="tema-dugme" aria-pressed="false" aria-label="Koyu tema" title="Koyu temaya geç">
         <svg class="ikon-ay" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 14.6A8.2 8.2 0 0 1 9.4 4a8.2 8.2 0 1 0 10.6 10.6z"/></svg>
         <svg class="ikon-gunes" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>
       </button>
+      <a class="yuvarlak wa-ust" data-wa href="#iletisim" aria-label="WhatsApp'tan yazın">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.2a8.8 8.8 0 0 0-7.6 13.2L3.2 20.8l4.5-1.2A8.8 8.8 0 1 0 12 3.2z"/></svg>
+      </a>
       <a class="ust-ara" data-tel href="#iletisim">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h3.5l2 5-2.4 1.5a11 11 0 0 0 5.4 5.4L15 13.5l5 2V19a2 2 0 0 1-2 2A16 16 0 0 1 3 6a2 2 0 0 1 2-2z"/></svg>
         <span class="ust-ara-no" data-firma="telefon"></span>
         <span class="ust-ara-kisa">Ara</span>
       </a>
-      <button type="button" class="yuvarlak menu-dugme" id="menu-dugme" aria-expanded="false" aria-controls="mobil-menu" aria-label="Menüyü aç">
-        <span></span><span></span>
-      </button>
     </div>
   </div>
-  <nav class="mobil-menu" id="mobil-menu" aria-label="Sayfa bölümleri" hidden>
-    <div class="kap">
-      <a href="#fiyatlar">Fiyatlar</a>
-      <a href="#hesapla">Hesapla</a>
-      <a href="#iletisim">İletişim</a>
-    </div>
-  </nav>
 </header>
 
 <main id="ana">
 
-  <!-- GİRİŞ -->
-  <section class="giris">
-    <canvas class="giyos" aria-hidden="true"></canvas>
-    <div class="kap giris-ic">
-      <div class="giris-metin">
-        <p class="ust-baslik" data-firma="konumKisa"></p>
-        <h1>Her gramında <em>güven.</em></h1>
-        <p class="giris-alt">Altın, sarrafiye ve döviz fiyatlarını ŞUKOB verileriyle anlık takip edin. Fiyat sormak için aramanıza gerek yok; almak ya da bozdurmak için çarşıda bekliyoruz.</p>
-        <div class="dugmeler">
-          <a class="dugme dugme-ana" href="#fiyatlar">Tüm fiyatlar</a>
-          <a class="dugme dugme-cizgi" data-wa href="#iletisim">WhatsApp'tan yazın</a>
-        </div>
-      </div>
-
-      <aside class="vitrin" aria-label="Öne çıkan fiyatlar">
-        <div class="vitrin-bas">
-          <div class="vitrin-ad">
-            <span class="vitrin-baslik" id="vitrin-ad">Gram Altın</span>
-            <span class="damga" id="vitrin-not">995</span>
-          </div>
-          <span class="durum" data-durum data-tip="bekliyor">Bağlanıyor</span>
-        </div>
-        <div class="vitrin-fiyat" id="vitrin-ana">
-          <div>
-            <span class="kucuk">Alış</span>
-            <strong class="tl" data-alan="alis">—</strong>
-          </div>
-          <div>
-            <span class="kucuk">Satış</span>
-            <strong class="tl" data-alan="satis">—</strong>
-          </div>
-        </div>
-        <ul class="vitrin-liste" id="vitrin-yan"></ul>
-      </aside>
-    </div>
-  </section>
-
-  <!-- FİYATLAR -->
-  <section class="bolum" id="fiyatlar">
-    <div class="kap">
-      <div class="bolum-bas">
+  <!-- FİYAT PANOSU -->
+  <section class="pano" id="fiyatlar">
+    <div class="kap pano-ic">
+      <div class="pano-bas">
         <div>
-          <p class="ust-baslik">Fiyat listesi</p>
-          <h2>Güncel <em>fiyatlar</em></h2>
+          <p class="ust-baslik" data-firma="konumKisa"></p>
+          <h1>Güncel <em>fiyatlar</em></h1>
+        </div>
+        <div class="saat-kutu" aria-label="Türkiye saati">
+          <span class="saat" id="saat">--:--:--</span>
+          <span class="tarih" id="tarih"></span>
+          <span class="durum" data-durum data-tip="bekliyor">Bağlanıyor</span>
         </div>
       </div>
 
       <noscript><p class="noscript-uyari">Fiyatları görmek için tarayıcınızda JavaScript açık olmalı. Güncel fiyat için bizi arayabilirsiniz.</p></noscript>
-      <p class="ornek-uyari" id="ornek-uyari" hidden>Şu an gösterilen fiyatlar <strong>örnek değerlerdir</strong>, gerçek piyasayı yansıtmaz. Site ŞUKOB bağlantısıyla sunucuya yüklendiğinde gerçek fiyatlar otomatik gelir.</p>
+      <p class="ornek-uyari" id="ornek-uyari" hidden>Şu an gösterilen fiyatlar <strong>örnek değerlerdir</strong>, gerçek piyasayı yansıtmaz.</p>
 
       <!-- Fiyat tablosu bileşeni: js/fiyat-tablosu.js + css/fiyat-tablosu.css
            Gruplar "Başlık:kod,kod|Başlık:kod" biçiminde; kodlar api/ayarlar.php ile aynı. -->
-      <div data-fiyat-tablosu
-           data-gruplar="Gram Altın:HAS,22_ayar_bilezik,hurda,cnc,sarnel|Sarrafiye:yeni_ceyrek,yeni_yarim,yeni_ziynet,eski_ceyrek,eski_yarim,eski_ziynet|Döviz ve Gümüş:USD,EUR,GMS"></div>
+      <div data-fiyat-tablosu data-duzen="tek"
+           data-gruplar="Altın:HAS,22_ayar_bilezik,hurda,cnc,sarnel|Sarrafiye:yeni_ceyrek,yeni_yarim,yeni_ziynet,eski_ceyrek,eski_yarim,eski_ziynet|Döviz ve Gümüş:USD,EUR,GMS"></div>
 
       <p class="aciklama"><strong>Alış:</strong> altınınızı ya da dövizinizi bizim aldığımız fiyat. <strong>Satış:</strong> size sattığımız fiyat. İşçilik dahil değildir; lütfen işlem öncesi mağazamızdan teyit edin.</p>
     </div>
   </section>
 
-  <!-- HESAPLAMA -->
-  <section class="bolum hesap" id="hesapla">
-    <div class="kap hesap-ic">
-      <div class="hesap-metin">
-        <p class="ust-baslik">Hesaplama</p>
-        <h2>Elinizdeki altın <em>ne kadar eder?</em></h2>
-        <p class="bolum-not">Ürünü ve miktarı seçin, güncel fiyattan hemen hesaplayalım. Sonuç tahminidir; kesin tutar mağazada tartı ve ayar kontrolüyle belirlenir.</p>
-      </div>
-
-      <form class="hesap-form" id="hesap-form" novalidate>
-        <div class="alan">
-          <label for="h-urun">Ürün</label>
-          <div class="secici">
-            <select id="h-urun"></select>
-          </div>
-        </div>
-        <div class="alan">
-          <label for="h-miktar">Miktar</label>
-          <div class="girdi-birim">
-            <input id="h-miktar" type="text" inputmode="decimal" autocomplete="off" value="2">
-            <span id="h-birim">adet</span>
-          </div>
-        </div>
-        <fieldset class="alan islem">
-          <legend>Ne yapacaksınız?</legend>
-          <div class="islem-secim">
-            <label><input type="radio" name="islem" id="h-al" value="al" checked><span>Satın alacağım</span></label>
-            <label><input type="radio" name="islem" id="h-boz" value="boz"><span>Bozduracağım</span></label>
-          </div>
-        </fieldset>
-        <output class="hesap-sonuc" id="h-sonuc" for="h-urun h-miktar h-al h-boz">
-          <span class="kucuk">Tahmini tutar</span>
-          <strong class="tl" id="h-tutar">—</strong>
-          <span class="hesap-detay" id="h-detay"></span>
-        </output>
-      </form>
-    </div>
-  </section>
-
   <!-- İLETİŞİM -->
-  <section class="bolum iletisim" id="iletisim">
+  <section class="iletisim" id="iletisim">
     <div class="kap iletisim-ic">
-      <div class="iletisim-bilgi">
-        <p class="ust-baslik">İletişim</p>
-        <h2>Çarşıda <em>bekliyoruz.</em></h2>
+      <div class="iletisim-bas">
+        <h2>İletişim</h2>
         <span class="acik-durum" id="acik-durum" hidden></span>
-        <dl class="bilgi-liste">
-          <div>
-            <dt>Adres</dt>
-            <dd data-firma="adres"></dd>
-          </div>
-          <div>
-            <dt>Telefon</dt>
-            <dd><a data-tel data-firma="telefon" href="#iletisim"></a></dd>
-          </div>
-          <div>
-            <dt>WhatsApp</dt>
-            <dd><a data-wa href="#iletisim">Mesaj gönderin</a></dd>
-          </div>
-          <div>
-            <dt>Instagram</dt>
-            <dd><a data-ig href="#iletisim"></a></dd>
-          </div>
-          <div>
-            <dt>Çalışma saatleri</dt>
-            <dd><ul class="saatler" id="saatler"></ul></dd>
-          </div>
-        </dl>
-        <div class="dugmeler">
-          <a class="dugme dugme-ana" data-yol href="#iletisim" target="_blank" rel="noopener">Yol tarifi al</a>
-        </div>
       </div>
-      <div class="harita" id="harita"></div>
+      <dl class="bilgi-liste">
+        <div>
+          <dt>Adres</dt>
+          <dd data-firma="adres"></dd>
+        </div>
+        <div>
+          <dt>Telefon</dt>
+          <dd><a data-tel data-firma="telefon" href="#iletisim"></a></dd>
+        </div>
+        <div>
+          <dt>Çalışma saatleri</dt>
+          <dd><ul class="saatler" id="saatler"></ul></dd>
+        </div>
+        <div>
+          <dt>Instagram</dt>
+          <dd><a data-ig href="#iletisim"></a></dd>
+        </div>
+      </dl>
+      <div class="dugmeler">
+        <a class="dugme dugme-ana" data-tel href="#iletisim">Hemen ara</a>
+        <a class="dugme dugme-cizgi" data-wa href="#iletisim">WhatsApp'tan yaz</a>
+        <a class="dugme dugme-cizgi" data-yol href="#iletisim" target="_blank" rel="noopener">Yol tarifi</a>
+      </div>
     </div>
   </section>
 
@@ -222,10 +135,6 @@
 
 <footer class="alt">
   <div class="kap alt-ic">
-    <a class="logo" href="#ana" aria-label="Sevilen Kuyumculuk, sayfa başı">
-      <span class="logo-ad">Sevilen</span>
-      <span class="logo-alt">Kuyumculuk</span>
-    </a>
     <p class="alt-not">Fiyatlar bilgilendirme amaçlıdır ve ŞUKOB tavsiye fiyatlarına dayanır. İşlem fiyatı mağazada kesinleşir.</p>
     <p class="alt-telif">© <span id="bu-yil"></span> Sevilen Kuyumculuk</p>
   </div>

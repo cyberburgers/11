@@ -1,9 +1,9 @@
 # Sevilen Kuyumculuk — Web Sitesi
 
-Tek sayfalık site: canlı altın, sarrafiye, döviz ve gümüş fiyatları (alış / satış), altın hesaplama aracı, hakkımızda, iletişim + harita ve WhatsApp düğmesi.
+Sade, tek sayfalık fiyat panosu: canlı saat, altın / sarrafiye / döviz ve gümüş için tek alış-satış tablosu, iletişim bilgileri ve WhatsApp düğmesi.
 
 - **İki tema:** Beyaz (varsayılan) ve koyu zümrüt. Ziyaretçi üst çubuktaki ay/güneş düğmesiyle değiştirir, seçimi tarayıcısında hatırlanır.
-- **Telefonda:** açılır menü ve "Ana ekrana ekle" ikonu var. Müşteri fiyat sayfasını uygulama gibi ekranına ekleyebilir.
+- **Telefonda:** üst çubukta ara ve WhatsApp düğmeleri, "Ana ekrana ekle" ikonu. Müşteri fiyat sayfasını uygulama gibi ekranına ekleyebilir.
 - **Paylaşım:** Site linki WhatsApp'ta paylaşılınca logolu önizleme görseli çıkar. Google için işletme bilgisi (adres, telefon, çalışma saatleri) sayfaya otomatik eklenir.
 
 Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 10 saniyede bir yenilenir (ŞUKOB en fazla ~20 sn geriden takip edilir). Altın, sarrafiye ve gümüş ŞUKOB listesindeki gibi kuruşsuz, döviz 2 haneyle (48,81) gösterilir.

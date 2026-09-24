@@ -1,7 +1,7 @@
 /* =====================================================================
    SEVİLEN KUYUMCULUK — SİTE AYARLARI
    Sitede değiştirmek isteyeceğiniz her şey bu dosyada:
-   iletişim bilgileri, çalışma saatleri, öne çıkan fiyatlar.
+   iletişim bilgileri, çalışma saatleri, fiyat tablosu ayarları.
    Fiyat listesi ve kâr marjı: api/ayarlar.php
    ===================================================================== */
 
@@ -33,36 +33,7 @@ window.SEVILEN = {
       6: ['09:00', '19:30'],
       0: null
     }
-  },
-
-  /* ---------------------------------------------------------------
-     ÜST KISIMDA ÖNE ÇIKAN FİYATLAR (ŞUKOB ürün kodları)
-     Hangi ürünlerin listede görüneceği, adları ve kâr marjı ise
-     sunucudaki api/ayarlar.php dosyasından yönetilir.
-     --------------------------------------------------------------- */
-  vitrin: {
-    ana: 'HAS',
-    anaNot: '995',                 // ana fiyatın yanındaki ayar damgası (boş bırakılabilir)
-    yan: ['yeni_ceyrek', '22_ayar_bilezik', 'USD', 'EUR']
-  },
-
-  /* ---------------------------------------------------------------
-     HESAPLAMA ARACINDA MİKTAR BİRİMİ
-     Burada olmayan ürünler "adet" ile hesaplanır.
-     --------------------------------------------------------------- */
-  birimler: {
-    HAS: 'gram',
-    '22_ayar_bilezik': 'gram',
-    hurda: 'gram',
-    cnc: 'gram',
-    sarnel: 'gram',
-    GMS: 'gram',
-    USD: 'USD',
-    EUR: 'EUR'
-  },
-
-  // İşçilik ücreti ayrıca alınan ürünler (hesaplama sonucunda not düşülür)
-  iscilikli: ['22_ayar_bilezik', 'cnc', 'sarnel']
+  }
 };
 
 /* Fiyat tablosu bileşeninin ayarları (js/fiyat-tablosu.js) */
@@ -73,7 +44,6 @@ window.FIYAT_TABLOSU = {
 
   // Ekranda virgülden sonra kaç hane gösterilsin. 0 hanede kuruş ŞUKOB'daki
   // gibi kesilir (6659,77 → 6.659), diğerlerinde yuvarlanır (55,406 → 55,41).
-  // Hesaplama da ekranda görünen fiyatla yapılır.
   ondalik: {
     varsayilan: 0,   // altın, sarrafiye ve gümüş: kuruşsuz (6.659 ; 93)
     USD: 2,          // 48,81
