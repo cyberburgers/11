@@ -69,14 +69,14 @@ window.SEVILEN = {
 /* Fiyat tablosu bileşeninin ayarları (js/fiyat-tablosu.js) */
 window.FIYAT_TABLOSU = {
   adres: 'api/fiyatlar.php',   // sunucudaki fiyat uç noktası
-  yenilemeSaniye: 15,          // tablo kaç saniyede bir yenilensin
+  yenilemeSaniye: 30,          // tablo kaç saniyede bir yenilensin
 
-  // Ekranda virgülden sonra kaç hane gösterilsin. Fazlası yuvarlanmaz,
-  // ŞUKOB'daki gibi kesilir. Hesaplama da ekranda görünen fiyatla yapılır.
+  // Ekranda virgülden sonra kaç hane gösterilsin. 0 hanede kuruş ŞUKOB'daki
+  // gibi kesilir (6659,77 → 6.659), diğerlerinde yuvarlanır (55,406 → 55,41).
+  // Hesaplama da ekranda görünen fiyatla yapılır.
   ondalik: {
-    varsayilan: 0,   // altın ve sarrafiye: kuruşsuz (6.659)
-    GMS: 2,          // gümüş: 93,24
-    USD: 3,          // 48,813
-    EUR: 3
+    varsayilan: 0,   // altın, sarrafiye ve gümüş: kuruşsuz (6.659 ; 93)
+    USD: 2,          // 48,81
+    EUR: 2
   }
 };

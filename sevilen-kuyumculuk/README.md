@@ -6,7 +6,7 @@ Tek sayfalık site: canlı altın, sarrafiye, döviz ve gümüş fiyatları (al�
 - **Telefonda:** açılır menü ve "Ana ekrana ekle" ikonu var. Müşteri fiyat sayfasını uygulama gibi ekranına ekleyebilir.
 - **Paylaşım:** Site linki WhatsApp'ta paylaşılınca logolu önizleme görseli çıkar. Google için işletme bilgisi (adres, telefon, çalışma saatleri) sayfaya otomatik eklenir.
 
-Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 15 saniyede bir yenilenir. Altın ve sarrafiye ŞUKOB listesindeki gibi kuruşsuz, gümüş 2, döviz 3 haneyle gösterilir.
+Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 30 saniyede bir yenilenir. Altın, sarrafiye ve gümüş ŞUKOB listesindeki gibi kuruşsuz, döviz 2 haneyle (48,81) gösterilir.
 
 ## Dosyalar
 
@@ -40,9 +40,10 @@ Not: GitHub Pages ya da Netlify gibi yalnızca düz HTML barındıran yerlerde P
 - **`urunler`**: Gösterilecek ürün kodları, bu sırayla. `'kod' => 'Görünen ad'`. Ad yerine `null` yazılırsa ŞUKOB'daki ad kullanılır. Satırı silen ürün sitede görünmez.
   Kodlar: `HAS, 22_ayar_bilezik, hurda, yeni_ceyrek, yeni_yarim, yeni_ziynet, eski_ceyrek, eski_yarim, eski_ziynet, cnc, sarnel, GMS, USD, EUR`
 - **`kar_marji_yuzde`**: Satış fiyatlarına eklenecek yüzde. Varsayılan `0`.
-- **`onbellek_sn`**: ŞUKOB'a en fazla kaç saniyede bir gidileceği. Varsayılan `10` (ŞUKOB fiyatları da yaklaşık 10 saniyede bir güncelliyor).
+- **`onbellek_sn`**: ŞUKOB'a en fazla kaç saniyede bir gidileceği. Varsayılan `30`, en az `10`.
+- **`engel_bekleme_sn`**: Cloudflare engeli (403/429/503 ya da JSON yerine HTML) görülünce kaynağın hiç denenmeyeceği süre. Varsayılan `600` (10 dakika). Bu sürede son başarılı veri gösterilir; engel aşılmaya çalışılmaz.
 
-Ekranda kaç hane gösterileceği ve sayfanın yenilenme süresi `js/ayarlar.js` içindeki `FIYAT_TABLOSU` bölümündedir (`ondalik`, `yenilemeSaniye`). Fazla haneler yuvarlanmaz, ŞUKOB'daki gibi kesilir; hesaplama aracı da ekranda görünen fiyatı kullanır.
+Ekranda kaç hane gösterileceği ve sayfanın yenilenme süresi `js/ayarlar.js` içindeki `FIYAT_TABLOSU` bölümündedir (`ondalik`, `yenilemeSaniye`). Kuruşsuz gösterilen altın ve gümüşte kuruş ŞUKOB'daki gibi kesilir, döviz yuvarlanır; hesaplama aracı da ekranda görünen fiyatı kullanır.
 
 Uç nokta: `api/fiyatlar.php` (Apache/LiteSpeed'de `api/fiyatlar` de çalışır). Çıktı:
 
@@ -78,3 +79,7 @@ PHP kuruluysa klasörde şunu çalıştırın, sonra `http://localhost:8000` adr
 ```
 php -S localhost:8000
 ```
+
+## Bilinen risk
+
+`sukobfiyat.com/api/prices/` ŞUKOB'un kendi sayfası için kullandığı iç adrestir, resmî ve açık bir API değildir. Haber verilmeden değişebilir ya da kapanabilir. Kalıcı kullanım için odadan izin alınması önerilir.

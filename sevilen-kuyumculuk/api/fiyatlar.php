@@ -35,11 +35,24 @@ if (!empty($AYAR['tani_acik']) && isset($_GET['tani'])) {
     exit;
 }
 
-$sure     = max(5, (int) ($AYAR['onbellek_sn'] ?? 30));
+// Kaynağa 10 saniyeden sık gidilmez
+$sure     = max(10, (int) ($AYAR['onbellek_sn'] ?? 30));
 $onbellek = onbellekOku($onbellekDosya);
 
 if ($onbellek && time() - $onbellek['zaman'] < $sure) {
     cevap($onbellek['liste'], $AYAR, 'taze');
+}
+
+// Cloudflare engeli görüldüyse bir süre kaynağı hiç denemeyiz (tekrar deneme döngüsü yok)
+$sonHata = is_file($hataDosya) ? json_decode((string) @file_get_contents($hataDosya), true) : null;
+$bekleme = (int) ($AYAR['engel_bekleme_sn'] ?? 600);
+if (!empty($sonHata['cloudflare']) && time() - (int) ($sonHata['unix'] ?? 0) < $bekleme) {
+    if ($onbellek) {
+        cevap($onbellek['liste'], $AYAR, 'bayat');
+    }
+    http_response_code(502);
+    echo json_encode(['hata' => 'Fiyatlar alınamadı'], JSON_UNESCAPED_UNICODE);
+    exit;
 }
 
 // Aynı anda gelen ziyaretçilerin hepsi kaynağa gitmesin: yalnızca biri gider
@@ -65,6 +78,7 @@ if ($sonuc['liste']) {
 // Kaynak hata verdi ya da JSON bozuk: sebebi kaydet, son başarılı veriyi dön
 @file_put_contents($hataDosya, json_encode([
     'zaman'      => date('c'),
+    'unix'       => time(),
     'http_kodu'  => $sonuc['http_kodu'],
     'cloudflare' => $sonuc['cloudflare'],
     'mesaj'      => $sonuc['hata'],
@@ -139,7 +153,7 @@ function kaynaktanCek(array $ayar): array
         CURLOPT_CONNECTTIMEOUT => 5,
         CURLOPT_TIMEOUT        => (int) ($ayar['zaman_asimi_sn'] ?? 8),
         CURLOPT_ENCODING       => '',
-        CURLOPT_USERAGENT      => 'Mozilla/5.0',
+        CURLOPT_USERAGENT      => 'Mozilla/5.0 (sukob-fiyat)',
         CURLOPT_REFERER        => 'https://sukobfiyat.com/',
         // sukobfiyat.com sayfasının kendi isteğiyle aynı başlıklar
         CURLOPT_HTTPHEADER     => ['Accept: application/json, text/javascript, */*; q=0.01', 'X-Requested-With: XMLHttpRequest'],
@@ -158,10 +172,16 @@ function kaynaktanCek(array $ayar): array
 
     $sonuc = ['liste' => [], 'http_kodu' => $kod, 'cloudflare' => false, 'hata' => null];
 
-    $cloudflareSunucu = stripos($basliklar['server'] ?? '', 'cloudflare') !== false;
-    if (($kod === 403 || $kod === 503) && ($cloudflareSunucu || isset($basliklar['cf-mitigated']))) {
+    // 403 / 429 / 503 ya da JSON yerine HTML sayfası: Cloudflare engeli say, aşmaya çalışma
+    if (in_array($kod, [403, 429, 503], true)) {
         $sonuc['cloudflare'] = true;
-        $sonuc['hata'] = 'Cloudflare isteği engelledi (HTTP ' . $kod . ')';
+        $sonuc['hata'] = 'Kaynak ' . $kod . ' döndü (muhtemel Cloudflare engeli)';
+        return $sonuc;
+    }
+    if (is_string($govde) && $govde !== '' && ltrim($govde)[0] !== '['
+        && (stripos($govde, '<html') !== false || stripos($govde, 'Just a moment') !== false)) {
+        $sonuc['cloudflare'] = true;
+        $sonuc['hata'] = 'JSON yerine HTML/doğrulama sayfası geldi (muhtemel Cloudflare engeli)';
         return $sonuc;
     }
     if ($govde === false || $govde === '') {
@@ -234,7 +254,7 @@ function tani(array $ayar, string $onbellekDosya, string $hataDosya)
         'son_kaydedilen_hata'  => is_file($hataDosya) ? json_decode((string) file_get_contents($hataDosya), true) : null,
     ];
     if ($sonuc['cloudflare']) {
-        $rapor['ipucu'] = 'Kaynak, sunucunuzu Cloudflare ile engelliyor. Bu engel aşılmaya çalışılmamalı; ŞUKOB ile iletişime geçip sunucu IP adresiniz için izin ya da resmî veri erişimi isteyin.';
+        $rapor['ipucu'] = 'Kaynak, sunucunuzu Cloudflare ile engelliyor. Engelden sonra kaynak ' . (int) ($ayar['engel_bekleme_sn'] ?? 600) . ' saniye denenmez. Bu engel aşılmaya çalışılmamalı; ŞUKOB ile iletişime geçip sunucu IP adresiniz için izin ya da resmî veri erişimi isteyin.';
     }
     echo json_encode($rapor, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 }

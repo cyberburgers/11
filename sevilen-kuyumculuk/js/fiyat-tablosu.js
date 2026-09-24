@@ -14,7 +14,7 @@
    Ayar (isteğe bağlı, bu dosyadan önce):
      window.FIYAT_TABLOSU = { adres: 'api/fiyatlar.php', yenilemeSaniye: 30,
                               ondalik: { varsayilan: 2, USD: 3 } };
-     Ondalık fazlası yuvarlanmaz, kesilir (ŞUKOB listesiyle aynı görünsün diye).
+     Kuruşsuz (0 hane) gösterilenler ŞUKOB listesi gibi kesilir, diğerleri yuvarlanır.
      Diğer kodlar aynı sayıyı FiyatTablosu.kes(kod, deger) ve
      FiyatTablosu.bicimle(kod, deger) ile gösterebilir.
 
@@ -29,7 +29,7 @@
   var AYAR = window.FIYAT_TABLOSU || {};
   var ADRES = AYAR.adres || 'api/fiyatlar.php';
   var YENILEME_MS = (AYAR.yenilemeSaniye || 30) * 1000;
-  var KAYNAK_YAZISI = 'Kaynak: Şanlıurfa Kuyumcular Odası tavsiye fiyatları. Yatırım tavsiyesi değildir.';
+  var KAYNAK_YAZISI = 'Kaynak: Şanlıurfa Kuyumcular Odası tavsiye fiyatları. Bilgi amaçlıdır, yatırım tavsiyesi değildir.';
 
   var ONDALIK = AYAR.ondalik || {};
   var bicimler = {};
@@ -40,11 +40,14 @@
     return d == null ? 2 : d;
   }
 
-  // Fazla haneleri keser: 6659,77 → 6659 ; 48,8130 → 48,813
+  // Kuruşsuz gösterilenlerde (altın, gümüş) ŞUKOB gibi keser: 6659,77 → 6659
+  // Ondalıklı gösterilenlerde (döviz) yuvarlar: 55,406 → 55,41
   function kes(kod, deger) {
     if (deger == null || !isFinite(deger)) return null;
-    var c = Math.pow(10, hane(kod));
-    return Math.floor(deger * c + 1e-6) / c;
+    var d = hane(kod);
+    if (d === 0) return Math.floor(deger + 1e-6);
+    var c = Math.pow(10, d);
+    return Math.round(deger * c) / c;
   }
 
   function bicimle(kod, deger) {
