@@ -1,0 +1,8 @@
+# /api/fiyatlar adresini fiyatlar.php'ye yönlendir (Apache / LiteSpeed)
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^fiyatlar/?$ fiyatlar.php [L,QSA]
+  # Önbellek klasörü ve ayar dosyası dışarıdan okunamasın
+  RewriteRule ^onbellek(/|$) - [F,L]
+  RewriteRule ^ayarlar\.php$ - [F,L]
+</IfModule>

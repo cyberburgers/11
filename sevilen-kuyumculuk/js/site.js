@@ -1,7 +1,8 @@
 /* =====================================================================
    SEVİLEN KUYUMCULUK — SİTE DAVRANIŞI
    Ayarlar için js/ayarlar.js dosyasına bakın; burayı değiştirmeniz
-   gerekmez.
+   gerekmez. Fiyatları js/fiyat-tablosu.js çeker; bu dosya aynı veriyi
+   ('fiyatlar:guncellendi' olayı) vitrin ve hesaplama aracında kullanır.
    ===================================================================== */
 (function () {
   'use strict';
@@ -10,21 +11,8 @@
   var ONIZLEME = window.SEVILEN_ONIZLEME === true;
   var GUNLER = ['Pazar', 'Pazartesi', 'Salı', 'Çarşamba', 'Perşembe', 'Cuma', 'Cumartesi'];
 
-  var KALEM = {};        // id -> kalem ayarı
-  var SIRA = [];         // eşleştirme sırası
-  var GUNCEL = {};       // id -> { alis, satis }
-  var sonBasari = null;  // son başarılı güncelleme zamanı
-  var sonDeneme = 0;
-  var zamanlayici = null;
-  var ornekZamanlayici = null;
-
-  A.gruplar.forEach(function (g) {
-    g.kalemler.forEach(function (k) {
-      k.grup = g;
-      KALEM[k.id] = k;
-      SIRA.push(k);
-    });
-  });
+  var FIYAT = {};   // kod -> { ad, kod, alis, satis, guncelleme }
+  var SIRA = [];    // kaynaktan gelen sırayla kodlar
 
   /* ---------- Yardımcılar ---------- */
 
@@ -35,15 +23,6 @@
     return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) {
       return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
     });
-  }
-
-  // Türkçe karakterleri sadeleştirip büyük harfe çevirir: "Yeni Çeyrek" -> "YENI CEYREK"
-  function sade(s) {
-    return String(s || '')
-      .toLocaleUpperCase('tr-TR')
-      .normalize('NFD').replace(/[̀-ͯ]/g, '')
-      .replace(/[^A-Z0-9]+/g, ' ')
-      .trim();
   }
 
   var bicimler = {};
@@ -103,119 +82,22 @@
     if (f.kurulusYili) $('#yil-sayi').textContent = buYil - f.kurulusYili;
   }
 
-  /* ---------- Fiyat tabloları ---------- */
-
-  function notHtml(k) {
-    if (!k.not) return '';
-    if (k.notTur === 'damga') return '<span class="damga" title="Ayar damgası (milyem)">' + esc(k.not) + '</span>';
-    return '<span class="urun-not' + (k.notTur === 'kod' ? ' kod' : '') + '">' + esc(k.not) + '</span>';
-  }
-
-  function tablolariCiz() {
-    var tablolar = $('#tablolar');
-    var serit = $('#serit');
-    var html = '';
-    var seritHtml = '';
-
-    A.gruplar.forEach(function (g) {
-      if (g.gorunum === 'serit') {
-        g.kalemler.forEach(function (k) {
-          seritHtml +=
-            '<div class="serit-oge" data-k="' + esc(k.id) + '">' +
-              '<span class="serit-ad">' + esc(k.ad) + '</span>' +
-              '<span class="serit-deger"><span class="kucuk">Alış</span><span data-alan="alis">—</span></span>' +
-              '<span class="serit-deger"><span class="kucuk">Satış</span><span data-alan="satis">—</span></span>' +
-            '</div>';
-        });
-        return;
-      }
-      html +=
-        '<article class="tablo">' +
-          '<header class="tablo-bas">' +
-            '<h3 id="t-' + esc(g.id) + '">' + esc(g.baslik) + '</h3>' +
-            '<span class="tablo-birim">' + esc(g.birimYazi || '') + '</span>' +
-          '</header>' +
-          '<table aria-labelledby="t-' + esc(g.id) + '">' +
-            '<thead><tr><th scope="col">Ürün</th><th scope="col">Alış</th><th scope="col">Satış</th></tr></thead>' +
-            '<tbody>' +
-              g.kalemler.map(function (k) {
-                return '<tr data-k="' + esc(k.id) + '">' +
-                  '<th scope="row"><span class="urun"><span class="urun-ad">' + esc(k.ad) + '</span>' + notHtml(k) + '</span></th>' +
-                  '<td data-alan="alis">—</td>' +
-                  '<td data-alan="satis">—</td>' +
-                '</tr>';
-              }).join('') +
-            '</tbody>' +
-          '</table>' +
-        '</article>';
-    });
-
-    if (seritHtml) {
-      seritHtml += '<span class="serit-kaynak">Kaynak: ' + esc(A.fiyat.kaynakAdi) + ' tavsiye fiyatları</span>';
-    }
-    tablolar.innerHTML = html;
-    serit.innerHTML = seritHtml;
-  }
+  /* ---------- Vitrin (üstteki öne çıkan fiyatlar) ---------- */
 
   function vitrinCiz() {
-    var ana = KALEM[A.vitrin.ana];
-    if (ana) {
-      $('#vitrin-ana').setAttribute('data-k', ana.id);
-      $('#vitrin-ad').textContent = ana.ad;
-      var not = $('#vitrin-not');
-      not.textContent = ana.not || '';
-      not.hidden = !ana.not;
-      not.className = ana.notTur === 'damga' ? 'damga' : 'urun-not';
-    }
-    $('#vitrin-yan').innerHTML = (A.vitrin.yan || []).filter(function (id) { return KALEM[id]; }).map(function (id) {
-      return '<li data-k="' + esc(id) + '">' +
-        '<span class="ad">' + esc(KALEM[id].ad) + '</span>' +
+    var v = A.vitrin || {};
+    $('#vitrin-ana').setAttribute('data-k', v.ana);
+    var not = $('#vitrin-not');
+    not.textContent = v.anaNot || '';
+    not.hidden = !v.anaNot;
+    $('#vitrin-yan').innerHTML = (v.yan || []).map(function (kod) {
+      return '<li data-k="' + esc(kod) + '">' +
+        '<span class="ad">—</span>' +
         '<span class="satir"><span>Alış</span><span data-alan="alis">—</span></span>' +
         '<span class="satir"><span>Satış</span><span data-alan="satis">—</span></span>' +
       '</li>';
     }).join('');
   }
-
-  /* ---------- Kaynak verisini listeyle eşleştirme ---------- */
-
-  function eslestir(kaynak) {
-    var liste = kaynak.map(function (s) {
-      return { alis: s.alis, satis: s.satis, n: ' ' + sade(s.ad) + ' ', ham: sade(s.ad) };
-    });
-    var kullanildi = [];
-    var sonuc = {};
-
-    function uygun(s, kelimeler, haric) {
-      if (kullanildi.indexOf(s) > -1) return false;
-      for (var i = 0; i < kelimeler.length; i++) if (s.n.indexOf(' ' + kelimeler[i] + ' ') < 0) return false;
-      for (var j = 0; j < haric.length; j++) if (s.n.indexOf(' ' + haric[j] + ' ') > -1) return false;
-      return true;
-    }
-
-    SIRA.forEach(function (k) {
-      var bulunan = null;
-      if (k.kaynakAdi) {
-        var hedef = sade(k.kaynakAdi);
-        bulunan = liste.filter(function (s) { return s.ham === hedef; })[0] || null;
-      } else {
-        var haric = (k.haric || []).map(sade);
-        var alternatifler = k.eslesme || [];
-        for (var a = 0; a < alternatifler.length && !bulunan; a++) {
-          var kelimeler = sade(alternatifler[a]).split(' ');
-          bulunan = liste.filter(function (s) { return uygun(s, kelimeler, haric); })[0] || null;
-        }
-      }
-      if (!bulunan) return;
-      kullanildi.push(bulunan);
-      sonuc[k.id] = {
-        alis: bulunan.alis > 0 ? bulunan.alis + (k.alisFark || 0) : null,
-        satis: bulunan.satis > 0 ? bulunan.satis + (k.satisFark || 0) : null
-      };
-    });
-    return sonuc;
-  }
-
-  /* ---------- Ekrana yazma ---------- */
 
   function parlat(el, yon) {
     el.classList.remove('yukari', 'asagi');
@@ -223,35 +105,25 @@
     el.classList.add(yon);
   }
 
-  function uygula(kaynak) {
-    var yeni = eslestir(kaynak);
+  function vitrinGuncelle(degisim) {
+    var v = A.vitrin || {};
+    var ana = FIYAT[v.ana];
+    if (ana) $('#vitrin-ad').textContent = ana.ad;
 
-    Object.keys(KALEM).forEach(function (id) {
-      var k = KALEM[id];
-      var v = yeni[id] || { alis: null, satis: null };
-      var eski = GUNCEL[id];
-
-      $$('[data-k="' + id + '"]').forEach(function (kutu) {
-        ['alis', 'satis'].forEach(function (alan) {
-          var hucre = $('[data-alan="' + alan + '"]', kutu);
-          if (!hucre) return;
-          var deger = v[alan];
-          var metin = yaz(deger, k.ondalik);
-          if (k.onEk && deger != null) metin = k.onEk + metin;
-          hucre.textContent = metin;
-          hucre.classList.toggle('bos', deger == null);
-          if (eski && eski[alan] != null && deger != null && deger !== eski[alan]) {
-            parlat(hucre, deger > eski[alan] ? 'yukari' : 'asagi');
-          }
-        });
-        if (eski && eski.satis != null && v.satis != null && v.satis !== eski.satis) {
-          kutu.setAttribute('data-yon', v.satis > eski.satis ? 'yukari' : 'asagi');
-        }
+    $$('#vitrin-ana, #vitrin-yan [data-k]').forEach(function (kutu) {
+      var kod = kutu.getAttribute('data-k');
+      var o = FIYAT[kod];
+      var d = degisim[kod] || {};
+      var ad = $('.ad', kutu);
+      if (ad) ad.textContent = o ? o.ad : kod;
+      ['alis', 'satis'].forEach(function (alan) {
+        var h = $('[data-alan="' + alan + '"]', kutu);
+        h.textContent = o ? yaz(o[alan]) : '—';
+        h.classList.toggle('bos', !o);
+        if (d[alan]) parlat(h, d[alan]);
       });
-      GUNCEL[id] = v;
+      if (d.satis) kutu.setAttribute('data-yon', d.satis);
     });
-
-    hesapla();
   }
 
   function durumYaz(tip, zaman) {
@@ -267,109 +139,29 @@
       el.setAttribute('data-tip', tip);
       el.textContent = metin;
     });
-
-    var alt = '';
-    if (tip === 'canli' || tip === 'ornek') alt = A.fiyat.yenilemeSaniye + ' saniyede bir yenilenir';
-    if (tip === 'bayat') alt = 'Kaynağa şu an ulaşılamıyor, en son alınan fiyatlar gösteriliyor';
-    if (tip === 'hata') {
-      alt = sonBasari
-        ? 'Son başarılı güncelleme ' + saatYaz(sonBasari) + '. Güncel fiyat için bizi arayın.'
-        : 'Fiyatlar şu an alınamıyor. Güncel fiyat için bizi arayın.';
-    }
-    $('#guncelleme').textContent = alt;
   }
 
-  /* ---------- Fiyat çekme ---------- */
-
-  function ornekIzinli() {
-    if (ONIZLEME) return true;
-    if (A.fiyat.ornekFiyat !== 'otomatik') return false;
-    var h = location.hostname;
-    return location.protocol === 'file:' || h === 'localhost' || h === '127.0.0.1' || h === '';
-  }
-
-  function cek() {
-    clearTimeout(zamanlayici);
-    sonDeneme = Date.now();
-    var ayrac = A.fiyat.adres.indexOf('?') > -1 ? '&' : '?';
-
-    fetch(A.fiyat.adres + ayrac + 't=' + Date.now(), { cache: 'no-store' })
-      .then(function (r) { return r.json(); })
-      .then(function (j) {
-        if (!j || !j.ok || !j.kalemler || !j.kalemler.length) throw new Error((j && j.hata) || 'Boş yanıt');
-        sonBasari = j.guncelleme || new Date().toISOString();
-        uygula(j.kalemler);
-        durumYaz(j.bayat ? 'bayat' : 'canli', sonBasari);
-      })
-      .catch(function () {
-        if (ornekIzinli()) { ornekBaslat(); return; }
-        durumYaz('hata');
-      })
-      .then(function () {
-        if (!ornekZamanlayici) zamanlayici = setTimeout(cek, A.fiyat.yenilemeSaniye * 1000);
-      });
-  }
-
-  document.addEventListener('visibilitychange', function () {
-    if (document.hidden || ornekZamanlayici) return;
-    if (Date.now() - sonDeneme > A.fiyat.yenilemeSaniye * 1000) cek();
+  document.addEventListener('fiyatlar:guncellendi', function (e) {
+    var d = e.detail;
+    FIYAT = {};
+    SIRA = [];
+    d.liste.forEach(function (o) { FIYAT[o.kod] = o; SIRA.push(o.kod); });
+    var ornek = !!(window.FIYAT_TABLOSU && window.FIYAT_TABLOSU.ornekVeri);
+    $('#ornek-uyari').hidden = !ornek;
+    durumYaz(ornek ? 'ornek' : d.bayat ? 'bayat' : 'canli', d.sonGuncelleme);
+    vitrinGuncelle(d.degisim || {});
+    hesapSecenekleri();
+    hesapla();
   });
 
-  /* ---------- Örnek fiyatlar (yalnızca önizleme) ---------- */
-
-  var ornek = { ons: 4150, usd: 47.2, gumusOns: 48.4 };
-
-  function ornekUret(ilk) {
-    if (!ilk) {
-      ornek.ons *= 1 + (Math.random() - 0.5) * 0.0016;
-      ornek.usd *= 1 + (Math.random() - 0.5) * 0.0005;
-      ornek.gumusOns *= 1 + (Math.random() - 0.5) * 0.002;
-    }
-    var has = ornek.ons * ornek.usd / 31.1035;
-    var gumus = ornek.gumusOns * ornek.usd / 31.1035;
-    var u = ornek.usd;
-    function s(ad, a, b) { return { ad: ad, alis: Math.round(a * 100) / 100, satis: Math.round(b * 100) / 100 }; }
-    return [
-      s('HAS ALTIN', has * 0.997, has * 1.004),
-      s('GRAM ALTIN', has * 0.995, has * 1.012),
-      s('22 AYAR BİLEZİK', has * 0.912, has * 0.948),
-      s('18 AYAR', has * 0.715, has * 0.79),
-      s('14 AYAR', has * 0.555, has * 0.65),
-      s('YENİ ÇEYREK', has * 1.606, has * 1.642),
-      s('ESKİ ÇEYREK', has * 1.59, has * 1.625),
-      s('YENİ YARIM', has * 3.212, has * 3.284),
-      s('ESKİ YARIM', has * 3.18, has * 3.25),
-      s('YENİ TAM', has * 6.424, has * 6.568),
-      s('ESKİ TAM', has * 6.36, has * 6.5),
-      s('YENİ ATA', has * 6.61, has * 6.76),
-      s('ESKİ ATA', has * 6.56, has * 6.7),
-      s('YENİ GREMSE', has * 16.06, has * 16.42),
-      s('ESKİ GREMSE', has * 15.9, has * 16.25),
-      s('USD', u * 0.9975, u * 1.0035),
-      s('EUR', u * 1.168, u * 1.176),
-      s('GBP', u * 1.338, u * 1.352),
-      s('CHF', u * 1.244, u * 1.262),
-      s('SAR', u / 3.75 * 0.985, u / 3.75 * 1.02),
-      s('GÜMÜŞ', gumus * 0.97, gumus * 1.06),
-      s('ONS', ornek.ons - 0.6, ornek.ons + 0.6)
-    ];
-  }
-
-  function ornekBaslat() {
-    if (ornekZamanlayici) return;
-    clearTimeout(zamanlayici);
-    $('#ornek-uyari').hidden = false;
-    uygula(ornekUret(true));
-    durumYaz('ornek', new Date());
-    ornekZamanlayici = setInterval(function () {
-      uygula(ornekUret(false));
-      durumYaz('ornek', new Date());
-    }, 4000);
-  }
+  document.addEventListener('fiyatlar:hata', function () {
+    durumYaz('hata');
+  });
 
   /* ---------- Hesaplama ---------- */
 
   var hForm, hUrun, hMiktar, hBirim, hTutar, hDetay;
+  var hSecenekKodlari = '';
 
   function hesapKur() {
     hForm = $('#hesap-form');
@@ -379,54 +171,55 @@
     hTutar = $('#h-tutar');
     hDetay = $('#h-detay');
 
-    hUrun.innerHTML = A.gruplar.map(function (g) {
-      var secenekler = g.kalemler.filter(function (k) { return k.hesapla !== false; });
-      if (!secenekler.length) return '';
-      return '<optgroup label="' + esc(g.baslik) + '">' +
-        secenekler.map(function (k) {
-          return '<option value="' + esc(k.id) + '">' + esc(k.ad) + '</option>';
-        }).join('') +
-      '</optgroup>';
-    }).join('');
-    if (KALEM.ceyrek) hUrun.value = 'ceyrek';
-
+    hUrun.innerHTML = '<option value="">Fiyatlar yükleniyor…</option>';
     hForm.addEventListener('submit', function (e) { e.preventDefault(); });
     hForm.addEventListener('input', hesapla);
     hForm.addEventListener('change', hesapla);
     hesapla();
   }
 
+  // Ürün listesi fiyatlardan gelir; liste değişmedikçe seçim korunur
+  function hesapSecenekleri() {
+    var kodlar = SIRA.join(',');
+    if (kodlar === hSecenekKodlari) return;
+    hSecenekKodlari = kodlar;
+    var secili = hUrun.value || (FIYAT.yeni_ceyrek ? 'yeni_ceyrek' : SIRA[0]);
+    hUrun.innerHTML = SIRA.map(function (kod) {
+      return '<option value="' + esc(kod) + '">' + esc(FIYAT[kod].ad) + '</option>';
+    }).join('');
+    hUrun.value = FIYAT[secili] ? secili : SIRA[0];
+  }
+
   function hesapla() {
     if (!hForm) return;
-    var k = KALEM[hUrun.value];
-    if (!k) return;
-    var birim = k.birim || 'adet';
+    var o = FIYAT[hUrun.value];
+    var birim = (A.birimler && A.birimler[hUrun.value]) || 'adet';
     hBirim.textContent = birim;
+    hTutar.classList.add('bos');
+    hTutar.textContent = '—';
 
+    if (!o) {
+      hDetay.textContent = 'Fiyatlar yüklenince hesaplama yapılabilir.';
+      return;
+    }
     var miktar = sayiOku(hMiktar.value);
-    var al = $('#h-al').checked;
-    var v = GUNCEL[k.id];
-    var fiyat = v ? (al ? v.satis : v.alis) : null;
-
-    hTutar.classList.remove('bos');
     if (miktar == null || miktar <= 0) {
-      hTutar.textContent = '—';
-      hTutar.classList.add('bos');
       hDetay.textContent = 'Geçerli bir miktar girin, örneğin 2 ya da 12,5.';
       return;
     }
+    var al = $('#h-al').checked;
+    var fiyat = al ? o.satis : o.alis;
     if (fiyat == null) {
-      hTutar.textContent = '—';
-      hTutar.classList.add('bos');
       hDetay.textContent = 'Bu ürünün fiyatı şu an alınamıyor.';
       return;
     }
 
-    hTutar.textContent = yaz(miktar * fiyat, 2);
-    var miktarYazi = yaz(miktar, miktar % 1 ? 2 : 0) + ' ' + birim;
-    if (k.notTur !== 'kod') miktarYazi += ' ' + k.ad;
-    var detay = miktarYazi + ' × ' + yaz(fiyat, k.ondalik) + ' ₺ · ' + (al ? 'satış' : 'alış') + ' fiyatı';
-    if (k.notTur === 'damga' && k.not !== '995') detay += ' · işçilik hariç';
+    hTutar.classList.remove('bos');
+    hTutar.textContent = yaz(miktar * fiyat);
+    var parabirimi = birim === 'USD' || birim === 'EUR';
+    var miktarYazi = yaz(miktar, miktar % 1 ? 2 : 0) + ' ' + birim + (parabirimi ? '' : ' ' + o.ad);
+    var detay = miktarYazi + ' × ' + yaz(fiyat) + ' ₺ · ' + (al ? 'satış' : 'alış') + ' fiyatı';
+    if ((A.iscilikli || []).indexOf(o.kod) > -1) detay += ' · işçilik hariç';
     hDetay.textContent = detay;
   }
 
@@ -664,7 +457,6 @@
   menuKur();
   firmaDoldur();
   if (!ONIZLEME) yapisalVeri();
-  tablolariCiz();
   vitrinCiz();
   hesapKur();
   saatleriCiz();
@@ -679,6 +471,4 @@
     boyutZaman = setTimeout(giyosCiz, 150);
   });
 
-  if (ONIZLEME) ornekBaslat();
-  else cek();
 })();

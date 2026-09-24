@@ -1,101 +1,112 @@
 <?php
 /* =====================================================================
-   SEVİLEN KUYUMCULUK — ŞUKOB FİYAT KÖPRÜSÜ
-   ŞUKOB sayfasındaki fiyat listesini okur, sitenin anlayacağı sade bir
-   JSON'a çevirir ve kısa süre önbellekte tutar.
+   SEVİLEN KUYUMCULUK — FİYAT UÇ NOKTASI
+   ŞUKOB fiyat servisini sunucuda çağırır (tarayıcıdan çağrılamaz, CORS
+   izni yok), sadeleştirir ve kısa süre önbellekte tutar.
 
-   Neden gerekli? Ziyaretçinin tarayıcısı başka bir sitenin verisini
-   doğrudan okuyamaz (tarayıcı güvenliği). Bu dosya sizin sunucunuzda
-   çalışıp veriyi sizin adınıza alır.
+   Çıktı: [{"ad","kod","alis","satis","guncelleme"}, ...]
+   Başlık: X-Fiyat-Durumu: taze | bayat  (bayat = kaynağa ulaşılamadı,
+           son başarılı veri dönüyor)
+   Hiç veri yoksa: 502 {"hata":"Fiyatlar alınamadı"}
 
-   Gereken: PHP 7.4 veya üstü, cURL ve DOM eklentileri (hostinglerin
-   neredeyse hepsinde açıktır). "onbellek" klasörü yazılabilir olmalı.
-
-   Kurulum testi: tarayıcıda  siteniz.com/api/fiyatlar.php?tani=1
-   Her şey yolundaysa, TANI_ACIK değerini false yapın.
+   Ayarlar: api/ayarlar.php
+   Kurulum testi: api/fiyatlar.php?tani=1
+   Gereken: PHP 7.4+, cURL. "api/onbellek" klasörü yazılabilir olmalı.
    ===================================================================== */
-
-// ---- AYARLAR ----------------------------------------------------------
-const KAYNAK_URL     = 'https://sukobfiyat.com/';
-const ONBELLEK_SN    = 20;          // kaynağa en fazla bu sıklıkta gidilir
-const BAYAT_SINIR_SN = 6 * 3600;    // bundan eski fiyat hiç gösterilmez
-const ZAMAN_ASIMI_SN = 8;
-const EN_AZ_KALEM    = 3;           // bundan az satır okunursa okuma başarısız sayılır
-const TANI_ACIK      = true;        // kurulum bitince false yapın
-// -----------------------------------------------------------------------
 
 date_default_timezone_set('Europe/Istanbul');
 header('Content-Type: application/json; charset=utf-8');
 header('Cache-Control: no-store, max-age=0');
 header('X-Content-Type-Options: nosniff');
 
+$AYAR = require __DIR__ . '/ayarlar.php';
+
 $klasor        = __DIR__ . '/onbellek';
-$onbellekDosya = $klasor . '/fiyatlar.json';
+$onbellekDosya = $klasor . '/kaynak.json';
+$hataDosya     = $klasor . '/son-hata.json';
 $kilitDosya    = $klasor . '/kilit';
 
 if (!is_dir($klasor)) {
     @mkdir($klasor, 0755, true);
 }
 
-if (TANI_ACIK && isset($_GET['tani'])) {
-    tani();
+if (!empty($AYAR['tani_acik']) && isset($_GET['tani'])) {
+    tani($AYAR, $onbellekDosya, $hataDosya);
     exit;
 }
 
+$sure     = max(5, (int) ($AYAR['onbellek_sn'] ?? 30));
 $onbellek = onbellekOku($onbellekDosya);
-$yas      = $onbellek ? time() - $onbellek['zaman'] : PHP_INT_MAX;
 
-// Önbellek tazeyse doğrudan onu gönder
-if ($yas < ONBELLEK_SN) {
-    cevap($onbellek, false);
+if ($onbellek && time() - $onbellek['zaman'] < $sure) {
+    cevap($onbellek['liste'], $AYAR, 'taze');
 }
 
-// Aynı anda gelen ziyaretçilerin hepsi ŞUKOB'a gitmesin: tek istek gider
+// Aynı anda gelen ziyaretçilerin hepsi kaynağa gitmesin: yalnızca biri gider
 $kilit = @fopen($kilitDosya, 'c');
 if ($kilit && !flock($kilit, LOCK_EX | LOCK_NB)) {
-    if ($onbellek && $yas < BAYAT_SINIR_SN) {
-        cevap($onbellek, $yas > ONBELLEK_SN * 6);
+    if ($onbellek) {
+        cevap($onbellek['liste'], $AYAR, 'taze');
     }
-    flock($kilit, LOCK_EX); // önbellek yoksa diğer isteğin bitmesini bekle
+    flock($kilit, LOCK_EX); // önbellek hiç yoksa diğer isteğin bitmesini bekle
     $onbellek = onbellekOku($onbellekDosya);
-    if ($onbellek && time() - $onbellek['zaman'] < ONBELLEK_SN) {
-        cevap($onbellek, false);
+    if ($onbellek && time() - $onbellek['zaman'] < $sure) {
+        cevap($onbellek['liste'], $AYAR, 'taze');
     }
 }
 
-$html    = indir(KAYNAK_URL, $hata);
-$kalemler = $html !== null ? sayfadanFiyatlar($html) : [];
+$sonuc = kaynaktanCek($AYAR);
 
-if (count($kalemler) >= EN_AZ_KALEM) {
-    $yeni = ['zaman' => time(), 'kalemler' => $kalemler];
-    @file_put_contents($onbellekDosya, json_encode($yeni, JSON_UNESCAPED_UNICODE), LOCK_EX);
-    cevap($yeni, false);
+if ($sonuc['liste']) {
+    @file_put_contents($onbellekDosya, json_encode(['zaman' => time(), 'liste' => $sonuc['liste']], JSON_UNESCAPED_UNICODE), LOCK_EX);
+    cevap($sonuc['liste'], $AYAR, 'taze');
 }
 
-// Kaynak okunamadı: son bilinen fiyatları "bayat" işaretiyle gönder
-if ($onbellek && time() - $onbellek['zaman'] < BAYAT_SINIR_SN) {
-    cevap($onbellek, true);
+// Kaynak hata verdi ya da JSON bozuk: sebebi kaydet, son başarılı veriyi dön
+@file_put_contents($hataDosya, json_encode([
+    'zaman'      => date('c'),
+    'http_kodu'  => $sonuc['http_kodu'],
+    'cloudflare' => $sonuc['cloudflare'],
+    'mesaj'      => $sonuc['hata'],
+], JSON_UNESCAPED_UNICODE));
+
+if ($onbellek) {
+    cevap($onbellek['liste'], $AYAR, 'bayat');
 }
 
-http_response_code(503);
-echo json_encode([
-    'ok'   => false,
-    'hata' => $html === null ? 'Kaynağa ulaşılamadı: ' . $hata : 'Kaynak sayfada fiyat bulunamadı',
-], JSON_UNESCAPED_UNICODE);
+http_response_code(502);
+echo json_encode(['hata' => 'Fiyatlar alınamadı'], JSON_UNESCAPED_UNICODE);
 exit;
 
 
 /* ===================================================================== */
 
-function cevap(array $veri, bool $bayat)
+/** Ayarlardaki ürünleri sırasıyla seçer, kâr marjını ekler ve gönderir. */
+function cevap(array $liste, array $ayar, string $durum)
 {
-    echo json_encode([
-        'ok'         => true,
-        'kaynak'     => 'ŞUKOB',
-        'guncelleme' => date('c', $veri['zaman']),
-        'bayat'      => $bayat,
-        'kalemler'   => $veri['kalemler'],
-    ], JSON_UNESCAPED_UNICODE);
+    $marj  = (float) ($ayar['kar_marji_yuzde'] ?? 0);
+    $kodla = [];
+    foreach ($liste as $oge) {
+        $kodla[$oge['kod']] = $oge;
+    }
+
+    $cikti = [];
+    foreach (($ayar['urunler'] ?? []) as $kod => $ad) {
+        if (!isset($kodla[$kod])) {
+            continue;
+        }
+        $oge = $kodla[$kod];
+        $cikti[] = [
+            'ad'         => $ad !== null && $ad !== '' ? $ad : $oge['ad'],
+            'kod'        => $kod,
+            'alis'       => round($oge['alis'], 2),
+            'satis'      => round($oge['satis'] * (1 + $marj / 100), 2),
+            'guncelleme' => $oge['guncelleme'],
+        ];
+    }
+
+    header('X-Fiyat-Durumu: ' . $durum);
+    echo json_encode($cikti, JSON_UNESCAPED_UNICODE);
     exit;
 }
 
@@ -105,226 +116,95 @@ function onbellekOku(string $dosya)
         return null;
     }
     $veri = json_decode((string) @file_get_contents($dosya), true);
-    return is_array($veri) && isset($veri['zaman'], $veri['kalemler']) ? $veri : null;
+    return is_array($veri) && isset($veri['zaman']) && !empty($veri['liste']) ? $veri : null;
 }
 
-function indir(string $url, &$hata = null)
+/**
+ * Kaynağı çağırır. Dönüş: liste (başarılıysa dolu), http_kodu, cloudflare, hata.
+ * Cloudflare engeli tespit edilirse yalnızca kaydedilir; aşılmaya çalışılmaz.
+ */
+function kaynaktanCek(array $ayar): array
 {
+    $url = $ayar['kaynak_url'] . (strpos($ayar['kaynak_url'], '?') === false ? '?' : '&')
+         . 'cache=' . (int) round(microtime(true) * 1000);
+
+    $basliklar = [];
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_MAXREDIRS      => 3,
         CURLOPT_CONNECTTIMEOUT => 5,
-        CURLOPT_TIMEOUT        => ZAMAN_ASIMI_SN,
+        CURLOPT_TIMEOUT        => (int) ($ayar['zaman_asimi_sn'] ?? 8),
         CURLOPT_ENCODING       => '',
-        CURLOPT_USERAGENT      => 'Mozilla/5.0 (compatible; SevilenKuyumculuk/1.0; +fiyat-listesi)',
-        CURLOPT_HTTPHEADER     => ['Accept: text/html,application/json;q=0.9,*/*;q=0.8', 'Accept-Language: tr-TR,tr;q=0.9'],
+        CURLOPT_USERAGENT      => 'Mozilla/5.0',
+        CURLOPT_REFERER        => 'https://sukobfiyat.com/',
+        CURLOPT_HTTPHEADER     => ['Accept: application/json'],
+        CURLOPT_HEADERFUNCTION => function ($ch, $satir) use (&$basliklar) {
+            $parca = explode(':', $satir, 2);
+            if (count($parca) === 2) {
+                $basliklar[strtolower(trim($parca[0]))] = trim($parca[1]);
+            }
+            return strlen($satir);
+        },
     ]);
     $govde = curl_exec($ch);
     $kod   = (int) curl_getinfo($ch, CURLINFO_HTTP_CODE);
     $hata  = curl_error($ch);
     curl_close($ch);
 
-    if ($govde === false || $kod >= 400 || $govde === '') {
-        $hata = $hata ?: ('HTTP ' . $kod);
-        return null;
-    }
-    return (string) $govde;
-}
+    $sonuc = ['liste' => [], 'http_kodu' => $kod, 'cloudflare' => false, 'hata' => null];
 
-/**
- * Sayfadaki her satırı (tablo satırı ya da liste öğesi) okur.
- * Bir satırın başındaki yazı ürün adı, ardından gelen ilk iki sayı
- * alış ve satış olarak alınır.
- */
-function sayfadanFiyatlar(string $html): array
-{
-    // Kaynak doğrudan JSON veriyorsa
-    $json = json_decode($html, true);
-    if (is_array($json)) {
-        return jsondanFiyatlar($json);
+    $cloudflareSunucu = stripos($basliklar['server'] ?? '', 'cloudflare') !== false;
+    if (($kod === 403 || $kod === 503) && ($cloudflareSunucu || isset($basliklar['cf-mitigated']))) {
+        $sonuc['cloudflare'] = true;
+        $sonuc['hata'] = 'Cloudflare isteği engelledi (HTTP ' . $kod . ')';
+        return $sonuc;
+    }
+    if ($govde === false || $govde === '') {
+        $sonuc['hata'] = 'Kaynağa ulaşılamadı: ' . ($hata ?: 'boş yanıt');
+        return $sonuc;
+    }
+    if ($kod >= 400) {
+        $sonuc['hata'] = 'Kaynak HTTP ' . $kod . ' döndü';
+        return $sonuc;
     }
 
-    $dom = new DOMDocument();
-    libxml_use_internal_errors(true);
-    $dom->loadHTML('<?xml encoding="utf-8" ?>' . $html);
-    libxml_clear_errors();
-    $xp = new DOMXPath($dom);
-
-    $satirlar = [];
-    foreach ($xp->query('//tr') as $tr) {
-        $hucreler = [];
-        foreach ($xp->query('./td|./th', $tr) as $td) {
-            $hucreler[] = temizle($td->textContent);
-        }
-        $satirlar[] = $hucreler;
+    $veri = json_decode($govde, true);
+    if (!is_array($veri)) {
+        $sonuc['hata'] = 'Kaynaktan gelen JSON bozuk';
+        return $sonuc;
     }
 
-    // Tablo yoksa div/li tabanlı listeleri dene
-    if (!satirlardanFiyatlar($satirlar)) {
-        $satirlar = [];
-        $sorgu = '//li | //*[contains(concat(" ", normalize-space(@class), " "), " row ")]'
-               . ' | //*[contains(@class, "item")] | //*[contains(@class, "satir")] | //*[contains(@class, "fiyat")]';
-        foreach ($xp->query($sorgu) as $el) {
-            $hucreler = [];
-            foreach ($el->childNodes as $cocuk) {
-                $metin = temizle($cocuk->textContent);
-                if ($metin !== '') {
-                    $hucreler[] = $metin;
-                }
-            }
-            $satirlar[] = $hucreler;
-        }
-    }
-
-    return satirlardanFiyatlar($satirlar);
-}
-
-function satirlardanFiyatlar(array $satirlar): array
-{
-    $sonuc = [];
-    $gorulen = [];
-    foreach ($satirlar as $hucreler) {
-        $kalem = satirCoz($hucreler);
-        if (!$kalem) {
+    foreach ($veri as $oge) {
+        if (!is_array($oge) || empty($oge['url']) || !is_numeric($oge['buyPrice'] ?? null) || !is_numeric($oge['sellPrice'] ?? null)) {
             continue;
         }
-        $anahtar = mb_strtoupper($kalem['ad'], 'UTF-8');
-        if (isset($gorulen[$anahtar])) {
-            continue;
-        }
-        $gorulen[$anahtar] = true;
-        $sonuc[] = $kalem;
+        $sonuc['liste'][] = [
+            'kod'        => (string) $oge['url'],
+            'ad'         => (string) ($oge['type'] ?? $oge['url']),
+            'alis'       => (float) $oge['buyPrice'],
+            'satis'      => (float) $oge['sellPrice'],
+            'guncelleme' => tarihCevir($oge['lastUpdate'] ?? ''),
+        ];
+    }
+    if (!$sonuc['liste']) {
+        $sonuc['hata'] = 'Kaynaktan gelen veride fiyat yok';
     }
     return $sonuc;
 }
 
-function satirCoz(array $hucreler)
+/** "24-09-2026 20:36:16" → "2026-09-24T20:36:16+03:00" */
+function tarihCevir(string $metin)
 {
-    $ad = '';
-    $sayilar = [];
-    foreach ($hucreler as $hucre) {
-        if ($hucre === '') {
-            continue;
-        }
-        $sayi = sayiCoz($hucre);
-        if ($sayi !== null) {
-            if ($ad !== '') {
-                $sayilar[] = $sayi;
-            }
-            continue;
-        }
-        $harfVar = preg_match('/\p{L}/u', $hucre) === 1;
-        if (!$harfVar) {
-            continue; // değişim yüzdesi, ok işareti vb.
-        }
-        if ($ad === '') {
-            // Hücrede ad ve sayılar birlikte olabilir: "22 AYAR 3.100,00 3.200,00"
-            list($ad, $icSayilar) = adVeSayilar($hucre);
-            $sayilar = array_merge($sayilar, $icSayilar);
-        }
-    }
-    if ($ad === '' || count($sayilar) < 1 || mb_strlen($ad, 'UTF-8') > 60) {
-        return null;
-    }
-    return [
-        'ad'    => $ad,
-        'alis'  => count($sayilar) >= 2 ? $sayilar[0] : null,
-        'satis' => count($sayilar) >= 2 ? $sayilar[1] : $sayilar[0],
-    ];
+    $t = DateTime::createFromFormat('d-m-Y H:i:s', trim($metin), new DateTimeZone('Europe/Istanbul'));
+    return $t ? $t->format('c') : null;
 }
 
-/** "22 AYAR BİLEZİK 3.100,00 3.200,00 %0,5" -> ["22 AYAR BİLEZİK", [3100, 3200]] */
-function adVeSayilar(string $metin): array
+/** Kurulum testi: kaynağı doğrudan çağırır ve ne olduğunu anlatır. 10 sn'de bir çalışır. */
+function tani(array $ayar, string $onbellekDosya, string $hataDosya)
 {
-    $parcalar = preg_split('/\s+/u', $metin);
-    $sayilar = [];
-    while ($parcalar) {
-        $son = end($parcalar);
-        if (strpos($son, '%') !== false || in_array($son, ['₺', 'TL', '$', '€', '▲', '▼', '-'], true)) {
-            array_pop($parcalar);
-            continue;
-        }
-        $sayi = sayiCoz($son);
-        if ($sayi === null || count($parcalar) === 1) {
-            break;
-        }
-        array_unshift($sayilar, $sayi);
-        array_pop($parcalar);
-    }
-    return [trim(implode(' ', $parcalar)), $sayilar];
-}
-
-/** Türkçe ("3.245,50") ve İngilizce ("3245.50") yazılmış sayıları okur. */
-function sayiCoz(string $s)
-{
-    $s = trim(str_replace(["\xc2\xa0", ' ', '₺', 'TL', '$', '€', '£'], '', $s));
-    if ($s === '' || !preg_match('/^\d[\d.,]*$/', $s)) {
-        return null;
-    }
-    $nokta  = strrpos($s, '.');
-    $virgul = strrpos($s, ',');
-
-    if ($nokta !== false && $virgul !== false) {
-        if ($virgul > $nokta) {
-            $s = str_replace(['.', ','], ['', '.'], $s);   // 3.245,50
-        } else {
-            $s = str_replace(',', '', $s);                 // 3,245.50
-        }
-    } elseif ($virgul !== false) {
-        $s = substr_count($s, ',') > 1 ? str_replace(',', '', $s) : str_replace(',', '.', $s);
-    } elseif ($nokta !== false) {
-        // "3.245" binlik ayırıcı mı, ondalık mı? Tek nokta + tam 3 hane -> binlik say
-        if (substr_count($s, '.') > 1 || preg_match('/^\d{1,3}\.\d{3}$/', $s)) {
-            $s = str_replace('.', '', $s);
-        }
-    }
-    return is_numeric($s) ? (float) $s : null;
-}
-
-function temizle(string $s): string
-{
-    return trim(preg_replace('/\s+/u', ' ', $s));
-}
-
-/** Kaynak JSON verirse: [{"ad"/"name"/"isim", "alis"/"buy", "satis"/"sell"}] biçimlerini dener. */
-function jsondanFiyatlar(array $json): array
-{
-    $sonuc = [];
-    $liste = isset($json['data']) && is_array($json['data']) ? $json['data'] : $json;
-    foreach ($liste as $anahtar => $oge) {
-        if (!is_array($oge)) {
-            continue;
-        }
-        $ad    = alanBul($oge, ['ad', 'isim', 'name', 'title', 'baslik', 'code', 'kod']) ?? (is_string($anahtar) ? $anahtar : null);
-        $alis  = alanBul($oge, ['alis', 'Alış', 'alış', 'buy', 'bid']);
-        $satis = alanBul($oge, ['satis', 'Satış', 'satış', 'sell', 'ask']);
-        $alis  = is_numeric($alis) ? (float) $alis : (is_string($alis) ? sayiCoz($alis) : null);
-        $satis = is_numeric($satis) ? (float) $satis : (is_string($satis) ? sayiCoz($satis) : null);
-        if ($ad && ($alis !== null || $satis !== null)) {
-            $sonuc[] = ['ad' => (string) $ad, 'alis' => $alis, 'satis' => $satis];
-        }
-    }
-    return $sonuc;
-}
-
-function alanBul(array $oge, array $adaylar)
-{
-    foreach ($adaylar as $a) {
-        if (isset($oge[$a]) && $oge[$a] !== '') {
-            return $oge[$a];
-        }
-    }
-    return null;
-}
-
-/** Kurulum sırasında neyin okunduğunu gösterir: api/fiyatlar.php?tani=1 */
-function tani()
-{
-    // Tanı sayfası önbelleği atlayıp ŞUKOB'a doğrudan gider; art arda
-    // açılarak kaynağın yorulmasın diye 10 saniyede bir kez çalışır.
-    $zamanDosya = __DIR__ . '/onbellek/tani-zamani';
+    $zamanDosya = dirname($onbellekDosya) . '/tani-zamani';
     $son = is_file($zamanDosya) ? (int) @file_get_contents($zamanDosya) : 0;
     if (time() - $son < 10) {
         http_response_code(429);
@@ -333,37 +213,25 @@ function tani()
     }
     @file_put_contents($zamanDosya, (string) time());
 
-    $bas  = microtime(true);
-    $html = indir(KAYNAK_URL, $hata);
-    $sure = round((microtime(true) - $bas) * 1000);
+    $bas   = microtime(true);
+    $sonuc = kaynaktanCek($ayar);
+    $kodlar = array_column($sonuc['liste'], 'kod');
 
     $rapor = [
-        'kaynak'        => KAYNAK_URL,
-        'sure_ms'       => $sure,
-        'ulasildi'      => $html !== null,
-        'hata'          => $html === null ? $hata : null,
-        'sayfa_boyutu'  => $html !== null ? strlen($html) : 0,
-        'okunan_kalemler' => [],
-        'ipuclari'      => [],
+        'kaynak'           => $ayar['kaynak_url'],
+        'sure_ms'          => (int) round((microtime(true) - $bas) * 1000),
+        'http_kodu'        => $sonuc['http_kodu'],
+        'basarili'         => (bool) $sonuc['liste'],
+        'hata'             => $sonuc['hata'],
+        'cloudflare_engeli' => $sonuc['cloudflare'],
+        'kaynaktaki_kodlar' => $kodlar,
+        'ayarlarda_olup_kaynakta_olmayan' => array_values(array_diff(array_keys($ayar['urunler'] ?? []), $kodlar)),
+        'ilk_kalemler'     => array_slice($sonuc['liste'], 0, 3),
+        'onbellek_yazilabilir' => is_writable(dirname($onbellekDosya)),
+        'son_kaydedilen_hata'  => is_file($hataDosya) ? json_decode((string) file_get_contents($hataDosya), true) : null,
     ];
-
-    if ($html !== null) {
-        $rapor['okunan_kalemler'] = sayfadanFiyatlar($html);
-
-        // Fiyatlar JavaScript ile sonradan yükleniyorsa asıl adresi bulmaya yardım et
-        if (preg_match_all('#(?:https?:)?//[^\s"\'<>]+|["\'](/[^"\'\s<>]*(?:api|json|fiyat|price|socket|ajax)[^"\'\s<>]*)["\']#i', $html, $m)) {
-            $adresler = array_filter(array_unique(array_merge($m[0], $m[1])), function ($u) {
-                return $u && preg_match('#api|json|fiyat|price|socket|ajax|\.js#i', $u);
-            });
-            $rapor['sayfadaki_adresler'] = array_values(array_slice($adresler, 0, 40));
-        }
-        if (!$rapor['okunan_kalemler']) {
-            $rapor['ipuclari'][] = 'Sayfada fiyat satırı bulunamadı. Fiyatlar büyük ihtimalle JavaScript ile sonradan yükleniyor; "sayfadaki_adresler" listesindeki api/json/socket adreslerinden biri asıl kaynaktır.';
-        }
+    if ($sonuc['cloudflare']) {
+        $rapor['ipucu'] = 'Kaynak, sunucunuzu Cloudflare ile engelliyor. Bu engel aşılmaya çalışılmamalı; ŞUKOB ile iletişime geçip sunucu IP adresiniz için izin ya da resmî veri erişimi isteyin.';
     }
-    if (!is_writable(dirname(__FILE__) . '/onbellek')) {
-        $rapor['ipuclari'][] = 'api/onbellek klasörü yazılabilir değil. Hosting panelinden izinlerini 755 yapın.';
-    }
-
     echo json_encode($rapor, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
 }

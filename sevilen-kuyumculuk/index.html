@@ -40,6 +40,7 @@
 <link rel="preload" href="fontlar/manrope-latin.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="css/fontlar.css">
 <link rel="stylesheet" href="css/site.css">
+<link rel="stylesheet" href="css/fiyat-tablosu.css">
 </head>
 <body>
 
@@ -129,19 +130,17 @@
           <p class="ust-baslik">Fiyat listesi</p>
           <h2>Güncel <em>fiyatlar</em></h2>
         </div>
-        <div class="bolum-bas-sag">
-          <span class="durum" data-durum data-tip="bekliyor">Bağlanıyor</span>
-          <span class="guncelleme" id="guncelleme"></span>
-        </div>
       </div>
 
       <noscript><p class="noscript-uyari">Fiyatları görmek için tarayıcınızda JavaScript açık olmalı. Güncel fiyat için bizi arayabilirsiniz.</p></noscript>
       <p class="ornek-uyari" id="ornek-uyari" hidden>Şu an gösterilen fiyatlar <strong>örnek değerlerdir</strong>, gerçek piyasayı yansıtmaz. Site ŞUKOB bağlantısıyla sunucuya yüklendiğinde gerçek fiyatlar otomatik gelir.</p>
 
-      <div class="tablolar" id="tablolar"></div>
-      <div class="serit" id="serit"></div>
+      <!-- Fiyat tablosu bileşeni: js/fiyat-tablosu.js + css/fiyat-tablosu.css
+           Gruplar "Başlık:kod,kod|Başlık:kod" biçiminde; kodlar api/ayarlar.php ile aynı. -->
+      <div data-fiyat-tablosu
+           data-gruplar="Gram Altın:HAS,22_ayar_bilezik,hurda,cnc,sarnel|Sarrafiye:yeni_ceyrek,yeni_yarim,yeni_ziynet,eski_ceyrek,eski_yarim,eski_ziynet|Döviz ve Gümüş:USD,EUR,GMS"></div>
 
-      <p class="aciklama"><strong>Alış:</strong> altınınızı ya da dövizinizi bizim aldığımız fiyat. <strong>Satış:</strong> size sattığımız fiyat. Fiyatlar ŞUKOB tavsiye listesine göre güncellenir; işçilik dahil değildir. Lütfen işlem öncesi mağazamızdan teyit edin.</p>
+      <p class="aciklama"><strong>Alış:</strong> altınınızı ya da dövizinizi bizim aldığımız fiyat. <strong>Satış:</strong> size sattığımız fiyat. İşçilik dahil değildir; lütfen işlem öncesi mağazamızdan teyit edin.</p>
     </div>
   </section>
 
@@ -273,6 +272,7 @@
 </a>
 
 <script src="js/ayarlar.js"></script>
+<script src="js/fiyat-tablosu.js"></script>
 <script src="js/site.js"></script>
 </body>
 </html>

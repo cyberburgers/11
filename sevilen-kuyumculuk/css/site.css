@@ -141,6 +141,9 @@ body {
 
 ::selection { background: var(--secim); }
 
+/* hidden özniteliği, display verilmiş öğelerde de gizlesin */
+[hidden] { display: none !important; }
+
 img { max-width: 100%; }
 a { color: inherit; }
 p { margin: 0; }
@@ -678,18 +681,6 @@ h1 {
   gap: 20px 32px;
   margin-bottom: 40px;
 }
-.bolum-bas-sag {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 14px;
-}
-.guncelleme {
-  font-size: 13px;
-  color: var(--yazi-3);
-  font-variant-numeric: tabular-nums;
-}
-
 .bolum-not {
   max-width: 48ch;
   margin-top: 18px;
@@ -709,112 +700,7 @@ h1 {
 }
 .ornek-uyari strong { font-weight: 700; }
 
-/* ---------- Fiyat tabloları ---------- */
-
-.tablolar {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 20px;
-}
-@media (max-width: 1040px) {
-  .tablolar { grid-template-columns: minmax(0, 1fr); max-width: 640px; }
-}
-
-.tablo {
-  background: var(--panel);
-  border: 1px solid var(--cizgi-yumusak);
-  border-radius: var(--kenar);
-  overflow-x: auto;
-}
-
-.tablo-bas {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 20px 22px 16px;
-  border-bottom: 1px solid var(--cizgi);
-}
-.tablo-bas h3 {
-  font-style: italic;
-  font-weight: 500;
-  font-size: 25px;
-}
-.tablo-birim {
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: var(--yazi-3);
-  white-space: nowrap;
-}
-
-.tablo table {
-  width: 100%;
-  border-collapse: collapse;
-}
-.tablo thead th {
-  padding: 12px 22px 8px 8px;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  text-align: right;
-  color: var(--yazi-3);
-}
-.tablo thead th:first-child {
-  padding-left: 22px;
-  text-align: left;
-}
-.tablo tbody tr {
-  border-top: 1px solid var(--cizgi-yumusak);
-  transition: background-color 0.2s ease;
-}
-.tablo tbody tr:hover { background: var(--satir-uzerine); }
-.tablo tbody th {
-  padding: 13px 4px 13px 22px;
-  text-align: left;
-  font-weight: 500;
-}
-.urun {
-  display: grid;
-  gap: 4px;
-  justify-items: start;
-}
-.urun-ad {
-  font-size: 15px;
-  line-height: 1.3;
-}
-.urun-not {
-  font-size: 11.5px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  color: var(--yazi-3);
-  font-variant-numeric: tabular-nums;
-}
-.urun-not.kod { letter-spacing: 0.14em; }
-
-.tablo td {
-  padding: 13px 22px 13px 8px;
-  text-align: right;
-  font-size: 15.5px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-.tablo td + td { padding-left: 4px; }
-.tablo td[data-alan="satis"] { color: var(--vurgu); }
-
-/* Üç sütunlu düzende tablolar dar: boşlukları biraz kıs */
-@media (min-width: 1041px) {
-  .tablo-bas { padding-inline: 18px; }
-  .tablo thead th { padding-right: 18px; }
-  .tablo thead th:first-child,
-  .tablo tbody th { padding-left: 18px; }
-  .tablo td { padding-right: 18px; font-size: 15px; }
-}
-
-/* Fiyat değişince kısa parlama ve ok */
+/* ---------- Vitrinde fiyat değişince kısa parlama ve ok ---------- */
 [data-alan].yukari { animation: parla-yukari 1.8s ease-out; }
 [data-alan].asagi  { animation: parla-asagi 1.8s ease-out; }
 
@@ -836,46 +722,6 @@ h1 {
 [data-yon="yukari"] [data-alan="satis"]::before { content: "▲"; color: var(--yukari); }
 [data-yon="asagi"]  [data-alan="satis"]::before { content: "▼"; color: var(--asagi); }
 .vitrin-fiyat [data-alan="satis"]::before { font-size: 11px; vertical-align: 0.9em; margin-right: 8px; }
-
-/* Piyasa şeridi */
-
-.serit {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 14px 44px;
-  margin-top: 20px;
-  padding: 16px 22px;
-  border: 1px solid var(--cizgi-yumusak);
-  border-radius: var(--kenar);
-}
-.serit:empty { display: none; }
-.serit-oge {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 4px 14px;
-  font-variant-numeric: tabular-nums;
-}
-.serit-ad {
-  font-family: var(--font-baslik);
-  font-style: italic;
-  font-size: 18px;
-}
-.serit-deger {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  font-size: 15px;
-  font-weight: 600;
-}
-.serit-deger .kucuk { display: inline; font-size: 10px; }
-.serit-deger [data-alan="satis"] { color: var(--vurgu); }
-.serit-kaynak {
-  margin-left: auto;
-  font-size: 12.5px;
-  color: var(--yazi-3);
-}
 
 .aciklama {
   max-width: 88ch;

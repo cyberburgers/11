@@ -1,0 +1,154 @@
+/* =====================================================================
+   FİYAT TABLOSU BİLEŞENİ — js/fiyat-tablosu.js ile birlikte kullanılır.
+   Tüm sınıflar "ft-" önekli; renk ve yazı tipleri sitenin tema
+   değişkenlerinden gelir (css/site.css). Değişkenler yoksa yanlarındaki
+   yedek değerler kullanılır, böylece başka bir sayfada da düzgün görünür.
+   ===================================================================== */
+
+.ft {
+  --ft-panel:   var(--panel, #FFFBF4);
+  --ft-yazi:    var(--yazi, #14261F);
+  --ft-soluk:   var(--yazi-3, #56635A);
+  --ft-vurgu:   var(--vurgu, #80591A);
+  --ft-cizgi:   var(--cizgi, rgba(160, 120, 50, 0.26));
+  --ft-ince:    var(--cizgi-yumusak, rgba(20, 38, 31, 0.10));
+  --ft-yukari:  var(--yukari, #1B7547);
+  --ft-asagi:   var(--asagi, #AE3F2D);
+  --ft-uyari:   var(--uyari, #8C5F0E);
+  --ft-yukari-z: var(--yukari-zemin, rgba(27, 117, 71, 0.12));
+  --ft-asagi-z:  var(--asagi-zemin, rgba(174, 63, 45, 0.12));
+  --ft-baslik-font: var(--font-baslik, Georgia, serif);
+  --ft-govde-font:  var(--font-govde, system-ui, sans-serif);
+
+  font-family: var(--ft-govde-font);
+  color: var(--ft-yazi);
+}
+
+/* Bileşen tek başına kullanıldığında da gizleme çalışsın */
+.ft [hidden] { display: none !important; }
+
+.ft-ust {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-bottom: 14px;
+}
+.ft-baslik {
+  margin: 0;
+  font-family: var(--ft-baslik-font);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 24px;
+}
+.ft-zaman {
+  font-size: 13px;
+  color: var(--ft-soluk);
+  font-variant-numeric: tabular-nums;
+}
+.ft-zaman.ft-uyari { color: var(--ft-uyari); font-weight: 600; }
+
+.ft-mesaj {
+  margin: 0;
+  padding: 28px 20px;
+  border: 1px dashed var(--ft-cizgi);
+  border-radius: 6px;
+  text-align: center;
+  color: var(--ft-soluk);
+}
+.ft-mesaj.ft-hata { color: var(--ft-asagi); font-weight: 600; }
+
+.ft-gruplar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+  gap: 20px;
+}
+
+.ft-kutu {
+  min-width: 0;
+  overflow-x: auto;
+  background: var(--ft-panel);
+  border: 1px solid var(--ft-ince);
+  border-radius: 6px;
+}
+
+.ft-tablo {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+.ft-grup {
+  padding: 18px 18px 14px;
+  border-bottom: 1px solid var(--ft-cizgi);
+  font-family: var(--ft-baslik-font);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 24px;
+  text-align: left;
+}
+.ft-tablo thead th {
+  padding: 12px 18px 8px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  text-align: right;
+  color: var(--ft-soluk);
+}
+.ft-tablo thead th:first-child { padding-left: 18px; text-align: left; }
+
+.ft-tablo tbody tr { border-top: 1px solid var(--ft-ince); }
+.ft-tablo tbody th {
+  padding: 12px 4px 12px 18px;
+  text-align: left;
+  font-size: 15px;
+  font-weight: 500;
+}
+.ft-tablo td {
+  padding: 12px 18px 12px 8px;
+  text-align: right;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.ft-tablo td + td { padding-left: 4px; }
+.ft-satis { color: var(--ft-vurgu); }
+
+/* Fiyat değişince: yükselişte yeşil, düşüşte kırmızı parlama + ok */
+.ft-yukari { animation: ft-yukari 2s ease-out; }
+.ft-asagi  { animation: ft-asagi 2s ease-out; }
+@keyframes ft-yukari {
+  0%, 25% { color: var(--ft-yukari); background-color: var(--ft-yukari-z); }
+  100%    { background-color: transparent; }
+}
+@keyframes ft-asagi {
+  0%, 25% { color: var(--ft-asagi); background-color: var(--ft-asagi-z); }
+  100%    { background-color: transparent; }
+}
+.ft-tablo tr[data-yon] .ft-satis::before {
+  display: inline-block;
+  margin-right: 6px;
+  font-size: 8px;
+  vertical-align: 2px;
+}
+.ft-tablo tr[data-yon="yukari"] .ft-satis::before { content: "▲"; color: var(--ft-yukari); }
+.ft-tablo tr[data-yon="asagi"]  .ft-satis::before { content: "▼"; color: var(--ft-asagi); }
+
+.ft-kaynak {
+  margin: 14px 0 0;
+  font-size: 12px;
+  color: var(--ft-soluk);
+}
+
+@media (max-width: 420px) {
+  .ft-tablo tbody th,
+  .ft-tablo thead th:first-child { padding-left: 14px; }
+  .ft-tablo td,
+  .ft-tablo thead th { padding-right: 14px; }
+  .ft-tablo tbody th, .ft-tablo td { font-size: 14px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ft-yukari, .ft-asagi { animation-duration: 0.01ms; }
+}
