@@ -452,6 +452,29 @@ h2 {
 }
 .aciklama strong { color: var(--yazi-2); font-weight: 600; }
 
+/* Aciklamanın altında, ortada küçük imza */
+.imza {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-top: 22px;
+  font-family: var(--font-baslik);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  color: var(--altin-yazi);
+}
+.imza::before,
+.imza::after {
+  content: "";
+  width: 36px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--altin));
+}
+.imza::after { transform: scaleX(-1); }
+
 /* ---------- İletişim ---------- */
 
 .iletisim {
