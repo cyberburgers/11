@@ -33,7 +33,7 @@
   var YENILEME_MS = (AYAR.yenilemeSaniye || 30) * 1000;
   // ŞUKOB cevap verse bile fiyatlar bu kadar dakikadır değişmediyse uyar
   var ESKI_DK = AYAR.eskiUyariDakika || 5;
-  var KAYNAK_YAZISI = 'Kaynak: Şanlıurfa Kuyumcular Odası tavsiye fiyatları. Bilgi amaçlıdır, yatırım tavsiyesi değildir.';
+  var KAYNAK_YAZISI = 'Bilgi amaçlıdır, yatırım tavsiyesi değildir.';
 
   var ONDALIK = AYAR.ondalik || {};
   var bicimler = {};
