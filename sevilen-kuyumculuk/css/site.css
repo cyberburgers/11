@@ -360,7 +360,26 @@ h2 {
 }
 .pano h1 { font-size: clamp(22px, 4.2vh, 46px); }
 
+/* Fiyat tablosunun hemen altında, ortada: firma adı ve altında imza */
+.pano-imza {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  margin-top: clamp(8px, 1.6vh, 18px);
+  text-align: center;
+}
+.pano-imza-firma {
+  font-family: var(--font-baslik);
+  font-style: italic;
+  font-weight: 500;
+  font-size: clamp(17px, 2.5vh, 23px);
+  line-height: 1.1;
+  color: var(--yazi);
+}
+.pano-imza .imza { margin: 0; font-size: clamp(13px, 1.8vh, 15px); }
+
 .saat-kutu {
+  justify-self: end;
   display: grid;
   grid-template-columns: auto auto;
   align-items: center;
@@ -382,8 +401,10 @@ h2 {
 }
 .saat-kutu .durum { margin-top: 0; }
 
-/* Güncelleme saati rozette yazdığı için tablo üstündeki satıra gerek yok */
-.pano .ft-ust { display: none; }
+/* Güncelleme saati rozette yazdığı için tablo üstündeki satıra gerek yok;
+   "yatırım tavsiyesi değildir" uyarısı da açıklama paragrafında */
+.pano .ft-ust,
+.pano .ft-kaynak { display: none; }
 
 /* Telefonda tek tablo, geniş ekranda üç yan yana kutu (alçak ekranlara da sığar) */
 .fiyat-genis { display: none; }
@@ -394,6 +415,9 @@ h2 {
 
 @media (max-width: 560px) {
   .pano-bas { flex-wrap: nowrap; }
+  .pano-imza-firma { font-size: 15px; }
+  .pano-imza .imza { font-size: 12px; gap: 10px; }
+  .pano-imza .imza::before, .pano-imza .imza::after { width: 24px; }
   .saat-kutu { grid-template-columns: auto; gap: 3px; }
   .tarih { display: none; }
 }
@@ -599,13 +623,13 @@ h2 {
   .saat-kutu .durum { padding-block: 2px; font-size: 11px; }
 }
 
-/* Sayfanın en altında (alt bilgi), ortada imza */
+/* İmza: iki yanında incelen altın çizgiler */
 .imza {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 14px;
-  margin: 18px 0 0;
+  margin: 0;
   font-family: var(--font-baslik);
   font-style: italic;
   font-weight: 500;
