@@ -147,13 +147,16 @@
 /* Fiyat değişince: yükselişte yeşil, düşüşte kırmızı parlama + ok */
 .ft-yukari { animation: ft-yukari 2s ease-out; }
 .ft-asagi  { animation: ft-asagi 2s ease-out; }
+/* İlk anda bir ton daha belirgin yanar, sonra yavaşça söner */
 @keyframes ft-yukari {
-  0%, 25% { color: var(--ft-yukari); background-color: var(--ft-yukari-z); }
-  100%    { background-color: transparent; }
+  0%   { color: var(--ft-yukari); background-color: color-mix(in srgb, var(--ft-yukari) 18%, transparent); }
+  25%  { color: var(--ft-yukari); background-color: color-mix(in srgb, var(--ft-yukari) 13%, transparent); }
+  100% { background-color: transparent; }
 }
 @keyframes ft-asagi {
-  0%, 25% { color: var(--ft-asagi); background-color: var(--ft-asagi-z); }
-  100%    { background-color: transparent; }
+  0%   { color: var(--ft-asagi); background-color: color-mix(in srgb, var(--ft-asagi) 18%, transparent); }
+  25%  { color: var(--ft-asagi); background-color: color-mix(in srgb, var(--ft-asagi) 13%, transparent); }
+  100% { background-color: transparent; }
 }
 .ft-tablo tr[data-yon] .ft-satis::before {
   display: inline-block;
