@@ -18,10 +18,10 @@ window.SEVILEN = {
     whatsapp: '905468817175',           // başında + olmadan, 90 ile başlayarak
     whatsappMesaj: 'Merhaba, fiyat bilgisi almak istiyorum.',
     instagram: 'sevilenkuyumculuk',     // @ işareti olmadan
-    adres: 'Kuyumcular Çarşısı No: 00, Eyyübiye / Şanlıurfa',
+    adres: 'Göbeklitepe İş Merkezi, Şanlıurfa',
     sehir: 'Şanlıurfa',
-    konumKisa: 'Şanlıurfa · Kuyumcular Çarşısı',
-    haritaArama: 'Kuyumcular Çarşısı, Eyyübiye, Şanlıurfa', // Google Haritalar'da aranacak metin
+    konumKisa: 'Şanlıurfa · Göbeklitepe İş Merkezi',
+    haritaArama: 'Göbeklitepe İş Merkezi, Şanlıurfa', // Google Haritalar'da aranacak metin
 
     // 0 = Pazar, 1 = Pazartesi ... 6 = Cumartesi. Kapalı gün için null yazın.
     calismaSaatleri: {
