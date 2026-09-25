@@ -6,7 +6,7 @@ Sade, tek sayfalık fiyat panosu: canlı saat, altın / sarrafiye / döviz ve g�
 - **Telefonda:** üst çubukta ara ve WhatsApp düğmeleri, "Ana ekrana ekle" ikonu. Müşteri fiyat sayfasını uygulama gibi ekranına ekleyebilir.
 - **Paylaşım:** Site linki WhatsApp'ta paylaşılınca logolu önizleme görseli çıkar. Google için işletme bilgisi (adres, telefon, çalışma saatleri) sayfaya otomatik eklenir.
 
-Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 10 saniyede bir yenilenir (ŞUKOB en fazla ~20 sn geriden takip edilir). Altın, sarrafiye ve gümüş ŞUKOB listesindeki gibi kuruşsuz, döviz 3 haneyle (48,813) gösterilir.
+Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üzerinden çekilir, sayfada 10 saniyede bir yenilenir (ŞUKOB en fazla ~20 sn geriden takip edilir). Altın ve sarrafiye ŞUKOB listesindeki gibi kuruşsuz, gümüş 2 haneyle (93,24), döviz 3 haneyle (48,813) gösterilir.
 
 ## Dosyalar
 
