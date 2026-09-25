@@ -599,10 +599,25 @@ h2 {
   .saat-kutu .durum { padding-block: 2px; font-size: 11px; }
 }
 
-/* Sayfanın en altında, ortada sade imza */
+/* Sayfanın en altında (alt bilgi), ortada imza */
 .imza {
-  margin: 14px 0 0;
-  font-size: 12px;
-  text-align: center;
-  color: var(--yazi-3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 18px 0 0;
+  font-family: var(--font-baslik);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 16px;
+  letter-spacing: 0.03em;
+  color: var(--altin-yazi);
 }
+.imza::before,
+.imza::after {
+  content: "";
+  width: 36px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--altin));
+}
+.imza::after { transform: scaleX(-1); }
