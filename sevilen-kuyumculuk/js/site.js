@@ -135,6 +135,67 @@
     }
   }
 
+  /* ---------- Arka plan deseni (giyoş: saat kadranı ve banknot oyması) ---------- */
+
+  function giyosCiz() {
+    var c = $('.giyos');
+    if (!c || !c.getContext) return;
+    var w = c.clientWidth, h = c.clientHeight;
+    if (!w || !h) return;
+    var dpr = Math.min(window.devicePixelRatio || 1, 2);
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    var x = c.getContext('2d');
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.clearRect(0, 0, w, h);
+
+    // Renk ve yoğunluk temadan gelir (css/site.css → --giyos-*)
+    var stil = getComputedStyle(document.documentElement);
+    var renk = stil.getPropertyValue('--giyos-renk').trim() || '176, 138, 69';
+    var guc = parseFloat(stil.getPropertyValue('--giyos-guc')) || 0.7;
+    function a(alfa) { return Math.min(1, alfa * guc).toFixed(3); }
+
+    function halka(cx, cy, r, k, d, faz, alfa) {
+      x.strokeStyle = 'rgba(' + renk + ', ' + a(alfa) + ')';
+      x.beginPath();
+      var N = 1600;
+      for (var i = 0; i <= N; i++) {
+        var t = (i / N) * Math.PI * 2;
+        var px = cx + r * ((1 - d) * Math.cos(t) + d * Math.cos(k * t + faz));
+        var py = cy + r * ((1 - d) * Math.sin(t) - d * Math.sin(k * t + faz));
+        if (i) x.lineTo(px, py); else x.moveTo(px, py);
+      }
+      x.stroke();
+    }
+
+    function rozet(cx, cy, R) {
+      x.lineWidth = 0.6;
+      for (var m = 0; m < 6; m++) halka(cx, cy, R * (1 - m * 0.03), 41, 0.07, m * 0.45, 0.2 - m * 0.02);
+      for (var n = 0; n < 4; n++) halka(cx, cy, R * (0.64 - n * 0.03), 29, 0.11, n * 0.6, 0.13 - n * 0.02);
+      x.lineWidth = 0.8;
+      x.strokeStyle = 'rgba(' + renk + ', ' + a(0.1) + ')';
+      x.beginPath(); x.arc(cx, cy, R * 1.1, 0, Math.PI * 2); x.stroke();
+    }
+
+    // İki köşede birer desen: sağ üst büyük, sol alt küçük
+    var kisa = Math.min(w, h);
+    if (w > 900) {
+      rozet(w * 0.93, h * 0.12, kisa * 0.42);
+      rozet(w * 0.05, h * 0.9, kisa * 0.3);
+    } else {
+      rozet(w * 0.98, h * 0.04, w * 0.55);
+    }
+  }
+
+  function giyosKur() {
+    var zaman;
+    function yeniden() { clearTimeout(zaman); zaman = setTimeout(giyosCiz, 120); }
+    window.addEventListener('resize', yeniden);
+    // Tablo yüklenince bölümün yüksekliği değişir; deseni ona göre yeniden çiz
+    if (window.ResizeObserver) new ResizeObserver(yeniden).observe($('.pano'));
+    giyosCiz();
+  }
+
   /* ---------- Açık / koyu tema ---------- */
 
   var TEMA_ANAHTAR = 'sevilen-tema';
@@ -164,6 +225,7 @@
     var meta = document.getElementById('tema-rengi');
     if (meta) meta.setAttribute('content', TEMA_RENGI[tema]);
     temaDugmesiniGuncelle();
+    giyosCiz();
   }
 
   function temaKur() {
@@ -210,6 +272,7 @@
   /* ---------- Başlat ---------- */
 
   temaKur();
+  giyosKur();
   firmaDoldur();
   if (window.SEVILEN_ONIZLEME !== true) yapisalVeri();
   saatiGuncelle();
