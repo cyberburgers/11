@@ -280,7 +280,7 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  min-height: 66px;
+  min-height: clamp(52px, 8vh, 66px);
 }
 .ust-sag {
   display: flex;
@@ -341,41 +341,61 @@ h2 {
   .ust-ara-kisa { display: inline; }
 }
 
-/* ---------- Fiyat panosu ---------- */
+/* ---------- Fiyat panosu ----------
+   Amaç: bütün fiyatlar kaydırmadan tek ekranda görünsün. Boşluklar ve
+   yazı boyutları ekran yüksekliğine (vh) göre ölçeklenir. */
 
 .pano {
-  padding-block: clamp(28px, 5vw, 56px) clamp(40px, 6vw, 72px);
+  padding-block: clamp(6px, 1.4vh, 28px) clamp(24px, 4vh, 48px);
   background: radial-gradient(900px 360px at 50% 0%, var(--giris-isik), transparent 70%), var(--zemin);
 }
 
 .pano-bas {
   display: flex;
   flex-wrap: wrap;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
-  gap: 16px 32px;
-  margin-bottom: 22px;
+  gap: 8px 24px;
+  margin-bottom: clamp(6px, 1.3vh, 20px);
 }
+.pano h1 { font-size: clamp(22px, 4.2vh, 46px); }
 
 .saat-kutu {
   display: grid;
+  grid-template-columns: auto auto;
+  align-items: center;
   justify-items: end;
-  gap: 4px;
+  gap: 2px 12px;
   text-align: right;
 }
 .saat {
-  font-size: clamp(28px, 4vw, 36px);
+  grid-column: 1 / -1;
+  font-size: clamp(20px, 3.4vh, 34px);
   font-weight: 600;
   line-height: 1;
   letter-spacing: 0.02em;
   font-variant-numeric: tabular-nums;
 }
 .tarih {
-  font-size: 13px;
+  font-size: 12.5px;
   color: var(--yazi-3);
 }
+.saat-kutu .durum { margin-top: 0; }
+
+/* Güncelleme saati rozette yazdığı için tablo üstündeki satıra gerek yok */
+.pano .ft-ust { display: none; }
+
+/* Telefonda tek tablo, geniş ekranda üç yan yana kutu (alçak ekranlara da sığar) */
+.fiyat-genis { display: none; }
+@media (min-width: 900px) {
+  .fiyat-dar { display: none; }
+  .fiyat-genis { display: block; }
+}
+
 @media (max-width: 560px) {
-  .saat-kutu { justify-items: start; text-align: left; }
+  .pano-bas { flex-wrap: nowrap; }
+  .saat-kutu { grid-template-columns: auto; gap: 3px; }
+  .tarih { display: none; }
 }
 
 .durum {
@@ -569,4 +589,12 @@ h2 {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
   }
+}
+
+/* Çok alçak telefon ekranları (iPhone SE vb.) */
+@media (max-width: 899px) and (max-height: 640px) {
+  .ust-ic { min-height: 48px; }
+  .pano h1 { font-size: 21px; }
+  .saat { font-size: 18px; }
+  .saat-kutu .durum { padding-block: 2px; font-size: 11px; }
 }

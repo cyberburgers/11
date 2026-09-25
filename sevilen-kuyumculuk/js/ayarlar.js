@@ -13,9 +13,9 @@ window.SEVILEN = {
      --------------------------------------------------------------- */
   firma: {
     ad: 'Sevilen Kuyumculuk',
-    telefon: '0414 000 00 00',          // sitede görünen hali
-    telefonArama: '+904140000000',      // arama linki için (boşluksuz, +90 ile)
-    whatsapp: '905000000000',           // başında + olmadan, 90 ile başlayarak
+    telefon: '0546 881 71 75',          // sitede görünen hali
+    telefonArama: '+905468817175',      // arama linki için (boşluksuz, +90 ile)
+    whatsapp: '905468817175',           // başında + olmadan, 90 ile başlayarak
     whatsappMesaj: 'Merhaba, fiyat bilgisi almak istiyorum.',
     instagram: 'sevilenkuyumculuk',     // @ işareti olmadan
     adres: 'Kuyumcular Çarşısı No: 00, Eyyübiye / Şanlıurfa',

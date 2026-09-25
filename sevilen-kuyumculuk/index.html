@@ -77,10 +77,7 @@
   <section class="pano" id="fiyatlar">
     <div class="kap pano-ic">
       <div class="pano-bas">
-        <div>
-          <p class="ust-baslik" data-firma="konumKisa"></p>
-          <h1>Güncel <em>fiyatlar</em></h1>
-        </div>
+        <h1>Güncel <em>fiyatlar</em></h1>
         <div class="saat-kutu" aria-label="Türkiye saati">
           <span class="saat" id="saat">--:--:--</span>
           <span class="tarih" id="tarih"></span>
@@ -93,7 +90,12 @@
 
       <!-- Fiyat tablosu bileşeni: js/fiyat-tablosu.js + css/fiyat-tablosu.css
            Gruplar "Başlık:kod,kod|Başlık:kod" biçiminde; kodlar api/ayarlar.php ile aynı. -->
-      <div data-fiyat-tablosu data-duzen="tek"
+      <!-- Telefonda tek tablo, geniş ekranda üç yan yana kutu. İkisi de aynı
+           veriyi kullanır (sunucuya tek istek gider); hangisinin görüneceğini
+           css/site.css belirler. Grup sırasını değiştirirseniz ikisini de güncelleyin. -->
+      <div class="fiyat-dar" data-fiyat-tablosu data-duzen="tek"
+           data-gruplar="Altın:HAS,22_ayar_bilezik,hurda,cnc,sarnel|Sarrafiye:eski_ceyrek,yeni_ceyrek,eski_yarim,yeni_yarim,eski_ziynet,yeni_ziynet|Döviz ve Gümüş:USD,EUR,GMS"></div>
+      <div class="fiyat-genis" data-fiyat-tablosu
            data-gruplar="Altın:HAS,22_ayar_bilezik,hurda,cnc,sarnel|Sarrafiye:eski_ceyrek,yeni_ceyrek,eski_yarim,yeni_yarim,eski_ziynet,yeni_ziynet|Döviz ve Gümüş:USD,EUR,GMS"></div>
 
       <p class="aciklama"><strong>Alış:</strong> altınınızı ya da dövizinizi bizim aldığımız fiyat. <strong>Satış:</strong> size sattığımız fiyat. İşçilik dahil değildir; lütfen işlem öncesi mağazamızdan teyit edin.</p>

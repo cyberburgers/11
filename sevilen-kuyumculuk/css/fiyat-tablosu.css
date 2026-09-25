@@ -182,38 +182,41 @@
   .ft-yukari, .ft-asagi { animation-duration: 0.01ms; }
 }
 
-/* ---------- Tek tablo düzeni (data-duzen="tek"): fiyat panosu ---------- */
+/* ---------- Tek tablo düzeni (data-duzen="tek"): fiyat panosu ----------
+   Satır boşlukları ve yazılar ekran yüksekliğine göre ölçeklenir; böylece
+   bütün fiyatlar telefonda da bilgisayarda da kaydırmadan sığar. */
 
 .ft-tek { display: block; }
 .ft-tek .ft-kutu {
   border-color: var(--ft-cizgi);
   box-shadow: 0 24px 50px -36px rgba(16, 32, 26, 0.35);
 }
+.ft-tek .ft-tablo { line-height: 1.2; }
 .ft-tek .ft-tablo thead th {
-  padding-top: 14px;
-  padding-bottom: 12px;
-  font-size: 12px;
+  padding-top: clamp(3px, 0.8vh, 12px);
+  padding-bottom: clamp(3px, 0.8vh, 12px);
+  font-size: clamp(10.5px, 1.4vh, 12px);
   border-bottom: 1px solid var(--ft-cizgi);
 }
 .ft-tek .ft-tablo tbody th {
-  padding-block: 14px;
-  font-size: 16px;
+  padding-block: clamp(3px, 0.78vh, 13px);
+  font-size: clamp(14px, 1.95vh, 17px);
   font-weight: 600;
 }
 .ft-tek .ft-tablo td {
-  padding-block: 14px;
-  font-size: 18px;
+  padding-block: clamp(3px, 0.78vh, 13px);
+  font-size: clamp(15px, 2.2vh, 20px);
   font-weight: 700;
 }
 .ft-tek .ft-tablo tbody tr:not(.ft-grup-satir):hover { background: color-mix(in srgb, var(--ft-yazi) 3%, transparent); }
 
 .ft-tek .ft-tablo tbody .ft-grup-satir th {
-  padding: 16px 18px 8px;
+  padding: clamp(3px, 0.7vh, 12px) 18px clamp(1px, 0.4vh, 8px);
   border-top: 1px solid var(--ft-cizgi);
   font-family: var(--ft-baslik-font);
   font-style: italic;
   font-weight: 500;
-  font-size: 20px;
+  font-size: clamp(14px, 1.9vh, 20px);
   text-align: left;
   color: var(--ft-vurgu);
   background: color-mix(in srgb, var(--ft-vurgu) 5%, var(--ft-panel));
@@ -228,6 +231,24 @@
   .ft-tek .ft-tablo tbody .ft-grup-satir th { padding-left: 26px; }
 }
 @media (max-width: 420px) {
-  .ft-tek .ft-tablo tbody th { font-size: 15px; }
-  .ft-tek .ft-tablo td { font-size: 16px; }
+  .ft-tek .ft-tablo tbody th,
+  .ft-tek .ft-tablo thead th:first-child,
+  .ft-tek .ft-tablo tbody .ft-grup-satir th { padding-left: 12px; }
+  .ft-tek .ft-tablo td,
+  .ft-tek .ft-tablo thead th { padding-right: 12px; }
+}
+
+/* Geniş ekranda üç kutu: rakamlar biraz daha büyük */
+@media (min-width: 900px) {
+  .fiyat-genis .ft-tablo tbody th { font-size: 16px; font-weight: 600; }
+  .fiyat-genis .ft-tablo td { font-size: clamp(16px, 2.2vh, 19px); font-weight: 700; padding-block: clamp(8px, 1.4vh, 14px); }
+  .fiyat-genis .ft-kutu { border-color: var(--ft-cizgi); box-shadow: 0 24px 50px -36px rgba(16, 32, 26, 0.35); }
+}
+
+/* Çok alçak telefon ekranları (iPhone SE vb.): biraz daha sıkı */
+@media (max-width: 899px) and (max-height: 640px) {
+  .ft-tek .ft-tablo tbody th { padding-block: 2px; font-size: 13.5px; }
+  .ft-tek .ft-tablo td { padding-block: 2px; font-size: 14.5px; }
+  .ft-tek .ft-tablo thead th { padding-top: 2px; padding-bottom: 2px; }
+  .ft-tek .ft-tablo tbody .ft-grup-satir th { padding-top: 2px; padding-bottom: 0; font-size: 13.5px; }
 }
