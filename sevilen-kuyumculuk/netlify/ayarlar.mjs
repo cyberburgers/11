@@ -41,5 +41,5 @@ export default {
   zamanAsimiSn: 8,
 
   // Kurulum testi: /api/tani  (kurulum bitince false yapın)
-  taniAcik: true
+  taniAcik: false
 };

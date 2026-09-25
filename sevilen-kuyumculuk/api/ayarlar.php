@@ -41,5 +41,5 @@ return [
     'zaman_asimi_sn' => 8,
 
     // Kurulum testi: api/fiyatlar.php?tani=1  (kurulum bitince false yapın)
-    'tani_acik' => true,
+    'tani_acik' => false,
 ];
