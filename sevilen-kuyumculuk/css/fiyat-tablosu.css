@@ -262,3 +262,18 @@
   .ft-tek .ft-tablo tbody th,
   .ft-tek .ft-tablo td { padding-block: 2px; }
 }
+
+/* Geniş ekranlarda kutular büyüdükçe yazılar ve boşluklar da büyüsün */
+@media (min-width: 1360px) {
+  .fiyat-genis .ft-gruplar { gap: 24px; }
+  .fiyat-genis .ft-grup { font-size: 26px; padding: 18px 26px 14px; }
+  .fiyat-genis .ft-tablo thead th { font-size: 12px; padding-right: 26px; }
+  .fiyat-genis .ft-tablo thead th:first-child,
+  .fiyat-genis .ft-tablo tbody th { padding-left: 26px; }
+  .fiyat-genis .ft-tablo tbody th { font-size: 17px; }
+  .fiyat-genis .ft-tablo td { font-size: clamp(17px, 2.3vh, 21px); padding-right: 26px; }
+}
+@media (min-width: 1700px) {
+  .fiyat-genis .ft-tablo tbody th { font-size: 18px; }
+  .fiyat-genis .ft-tablo td { font-size: clamp(18px, 2.4vh, 23px); }
+}

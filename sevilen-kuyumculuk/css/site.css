@@ -147,6 +147,9 @@ button { font: inherit; color: inherit; }
   margin-inline: auto;
   padding-inline: clamp(16px, 4vw, 40px);
 }
+/* Geniş ekranlarda içerik alanı da genişlesin, yanlar boş kalmasın */
+@media (min-width: 1360px) { .kap { max-width: 1240px; } }
+@media (min-width: 1700px) { .kap { max-width: 1440px; } }
 
 .atla {
   position: absolute;
