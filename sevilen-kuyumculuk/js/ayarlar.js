@@ -46,7 +46,7 @@ window.FIYAT_TABLOSU = {
   // gibi kesilir (6659,77 → 6.659), diğerlerinde yuvarlanır (55,406 → 55,41).
   ondalik: {
     varsayilan: 0,   // altın ve sarrafiye: kuruşsuz (6.659)
-    GMS: 2,          // gümüş: 93,24
+    GMS: 3,          // gümüş: 93,241
     USD: 3,          // 48,813
     EUR: 3
   }
