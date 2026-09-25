@@ -43,7 +43,7 @@ Not: GitHub Pages gibi yalnızca düz HTML barındıran yerlerde PHP çalışmaz
 - **`onbellek_sn`**: ŞUKOB'a en fazla kaç saniyede bir gidileceği. Varsayılan `10` (en az `10`).
 - **`engel_bekleme_sn`**: Cloudflare engeli (403/429/503 ya da JSON yerine HTML) görülünce kaynağın hiç denenmeyeceği süre. Varsayılan `600` (10 dakika). Bu sürede son başarılı veri gösterilir; engel aşılmaya çalışılmaz.
 
-Ekranda kaç hane gösterileceği ve sayfanın yenilenme süresi `js/ayarlar.js` içindeki `FIYAT_TABLOSU` bölümündedir (`ondalik`, `yenilemeSaniye`). Kuruşsuz gösterilen altın ve gümüşte kuruş ŞUKOB'daki gibi kesilir, döviz yuvarlanır; hesaplama aracı da ekranda görünen fiyatı kullanır.
+Ekranda kaç hane gösterileceği ve sayfanın yenilenme süresi `js/ayarlar.js` içindeki `FIYAT_TABLOSU` bölümündedir (`ondalik`, `yenilemeSaniye`). Kuruşsuz gösterilen altın ve sarrafiyede kuruş ŞUKOB'daki gibi kesilir; ondalıklı gösterilen gümüş ve döviz yuvarlanır.
 
 Uç nokta: `api/fiyatlar.php` (Apache/LiteSpeed'de `api/fiyatlar` de çalışır). Çıktı:
 

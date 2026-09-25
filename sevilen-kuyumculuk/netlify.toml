@@ -13,3 +13,25 @@
   to = "/bulunamadi"
   status = 404
   force = true
+
+# Güvenlik başlıkları: başka siteler sayfayı çerçeve içine alamaz,
+# tarayıcı dosya türünü tahmin etmez, gereksiz cihaz izinleri kapalı.
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    Permissions-Policy = "camera=(), microphone=(), geolocation=(), payment=()"
+
+# Yazı tipleri hiç değişmez: tarayıcı bir yıl saklasın (ikinci açılış hızlı)
+[[headers]]
+  for = "/fontlar/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+# İkon ve görseller: bir hafta saklansın
+[[headers]]
+  for = "/img/*"
+  [headers.values]
+    Cache-Control = "public, max-age=604800"
