@@ -31,7 +31,7 @@ Fiyatlar **ŞUKOB** (Şanlıurfa Kuyumcular Odası) fiyat servisinden sunucu üz
    - `"cloudflare_engeli": true` ise ŞUKOB sunucunuzu engelliyor. Bu engeli aşmaya çalışmayın; ŞUKOB ile görüşüp sunucu IP adresiniz için izin isteyin.
    - `ayarlarda_olup_kaynakta_olmayan` listesi, ayarlardaki ama ŞUKOB'da bulunmayan ürün kodlarını gösterir.
 4. Her şey tamamsa `api/ayarlar.php` içindeki `tani_acik` değerini `false` yapın.
-5. `index.html` içinde `www.example.com` yazan yeri kendi alan adınızla değiştirin (WhatsApp önizleme görseli buna bağlı).
+5. Alan adı `index.html` içinde `sevilenkuyumcu.com` olarak ayarlı (canonical ve WhatsApp önizleme görseli). Alan adı değişirse orayı güncelleyin.
 
 Not: GitHub Pages gibi yalnızca düz HTML barındıran yerlerde PHP çalışmaz; fiyatlar gelmez. Netlify için aşağıdaki bölüme bakın.
 
