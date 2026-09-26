@@ -45,8 +45,8 @@ window.FIYAT_TABLOSU = {
   // Ekranda virgülden sonra kaç hane gösterilsin. 0 hanede kuruş ŞUKOB'daki
   // gibi kesilir (6659,77 → 6.659), diğerlerinde yuvarlanır (55,406 → 55,41).
   ondalik: {
-    varsayilan: 0,   // altın ve sarrafiye: kuruşsuz (6.659)
-    GMS: 3,          // gümüş: 93,241
+    varsayilan: 0,   // altın, sarrafiye ve gümüş: kuruşsuz (6.659)
+    GMS: 0,          // gümüş: ŞUKOB gibi kuruşsuz (93)
     USD: 3,          // 48,813
     EUR: 3
   }
