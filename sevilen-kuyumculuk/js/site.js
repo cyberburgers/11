@@ -51,9 +51,22 @@
 
   /* ---------- Canlı saat (Türkiye saati) ---------- */
 
+  // Karşılama: saate göre "Hayırlı sabahlar / günler / akşamlar / geceler"
+  function selamYaz(simdi) {
+    var el = $('#selam');
+    if (!el) return;
+    var s = parseInt(saatYaz(simdi, false), 10);
+    var metin = s >= 5 && s < 11 ? 'Hayırlı sabahlar'
+              : s >= 11 && s < 17 ? 'Hayırlı günler'
+              : s >= 17 && s < 22 ? 'Hayırlı akşamlar'
+              : 'Hayırlı geceler';
+    if (el.textContent !== metin) el.textContent = metin;
+  }
+
   function saatiGuncelle() {
     var simdi = new Date();
     $('#saat').textContent = saatYaz(simdi);
+    selamYaz(simdi);
     try {
       $('#tarih').textContent = simdi.toLocaleDateString('tr-TR', {
         weekday: 'long', day: 'numeric', month: 'long', year: 'numeric', timeZone: 'Europe/Istanbul'
